@@ -1,0 +1,39 @@
+{
+  "name": "mongoes",
+  "version": "0.0.1",
+  "description": "A mongo to elasticsearch connector",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.js",
+  "scripts": {
+    "start": "node ./dist/src/index.js",
+    "build": "rm -rf ./dist && tsc",
+    "dev": "tsc -w & NODE_ENV=dev nodemon ./dist/src/index.js",
+    "test": "rm -rf ./dist && tsc && NODE_ENV=dev ava ./dist/test/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruguoapp/mongoes.git"
+  },
+  "author": "",
+  "license": "MPL",
+  "bugs": {
+    "url": "https://github.com/ruguoapp/mongoes/issues"
+  },
+  "homepage": "https://github.com/ruguoapp/mongoes#readme",
+  "devDependencies": {
+    "@types/elasticsearch": "^5.0.13",
+    "@types/lodash": "^4.14.64",
+    "@types/mongodb": "^2.2.2",
+    "@types/rx": "^4.1.1",
+    "@types/yargs": "^6.6.0",
+    "ava": "^0.19.1",
+    "typescript": "^2.3.2"
+  },
+  "dependencies": {
+    "elasticsearch": "^13.0.1",
+    "lodash": "^4.17.4",
+    "mongodb": "^2.2.26",
+    "rx": "^4.1.0",
+    "yargs": "^8.0.1"
+  }
+}
