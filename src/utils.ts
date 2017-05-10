@@ -1,7 +1,7 @@
 import { Readable } from 'stream'
 
-export function speedLimit(stream: Readable, dps?: number): Readable {
-  if (!dps) {
+export function limitStreamReadSpeed(stream: Readable, maxDPS?: number): Readable {
+  if (!maxDPS) {
     return stream
   }
   let dataCount = 0
@@ -11,7 +11,7 @@ export function speedLimit(stream: Readable, dps?: number): Readable {
   }, 1000)
   stream.addListener('data', (doc) => {
     dataCount++
-    if (dataCount >= dps) {
+    if (dataCount >= maxDPS) {
       stream.pause()
     }
   })

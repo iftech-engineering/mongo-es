@@ -1,36 +1,45 @@
+import { parse, format } from 'url'
 import { Timestamp } from 'bson'
 import { Observable } from 'rx'
 import { MongoClient } from 'mongodb'
 import { mapValues } from 'lodash'
-import { Config } from './types'
-import { speedLimit } from './utils'
+import { MongoConfig, ExtractTask } from './types'
+import { limitStreamReadSpeed } from './utils'
 
-export function scan(config: Config): Observable<any> {
+export function scan(config: MongoConfig, task: ExtractTask): Observable<any> {
   return Observable.create(async (observer) => {
     try {
-      const db = await MongoClient.connect(`${config.mongo.uri}/${config.mongo.db}`, config.mongo.options)
-      const collection = db.collection(config.mongo.collection)
-      const stream = speedLimit(collection.find(config.mongo.query, config.mongo.fields).sort({
-        $natural: -1,
-      }).stream(), config.mongo.dps)
-      stream.on('data', observer.onNext)
-      stream.on('error', observer.onError)
-      stream.on('end', observer.onCompleted)
+      const url = parse(config.url)
+      url.pathname = `/${task.db}`
+      const db = await MongoClient.connect(format(url), config.options)
+      const collection = db.collection(task.collection)
+      const stream = limitStreamReadSpeed(collection.find(task.query, task.fields).sort(task.sort).stream(), task.maxDPS)
+      stream.on('data', (doc) => {
+        observer.onNext(doc)
+      })
+      stream.on('error', (err) => {
+        observer.onError(err)
+      })
+      stream.on('end', () => {
+        observer.onCompleted()
+      })
     } catch (err) {
       observer.onError(err)
     }
   })
 }
 
-export function tail(config: Config, from: Timestamp): Observable<any> {
+export function tail(config: MongoConfig, task: ExtractTask, from: Date): Observable<any> {
   return Observable.create(async (observer) => {
     try {
-      const db = await MongoClient.connect(`${config.mongo.uri}/local`, config.mongo.options)
+      const url = parse(config.url)
+      url.pathname = '/local'
+      const db = await MongoClient.connect(format(url), config.options)
       const oplog = db.collection('oplog.rs')
       const stream = oplog.find({
-        ns: `${config.mongo.db}.${config.mongo.collection}`,
+        ns: `${task.db}.${task.collection}`,
         ts: {
-          $gte: from.toInt(),
+          $gte: new Timestamp(from.getTime(), 0),
         },
         fromMigrate: {
           $exists: false,
@@ -41,9 +50,15 @@ export function tail(config: Config, from: Timestamp): Observable<any> {
           noCursorTimeout: true,
           awaitData: true,
         }).stream()
-      stream.on('data', observer.onNext)
-      stream.on('error', observer.onError)
-      stream.on('end', observer.onCompleted)
+      stream.on('data', (doc) => {
+        observer.onNext(doc)
+      })
+      stream.on('error', (err) => {
+        observer.onError(err)
+      })
+      stream.on('end', () => {
+        observer.onCompleted()
+      })
     } catch (err) {
       observer.onError(err)
     }
