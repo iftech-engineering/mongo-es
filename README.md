@@ -1,6 +1,6 @@
-# MongoES
+# Mongo2ES5
 
-## A MongoDB to Elasticsearch connector
+## A MongoDB to Elasticsearch 5.x connector
 
 ## ⚠WIP
 

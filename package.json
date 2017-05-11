@@ -1,7 +1,7 @@
 {
-  "name": "mongoes",
+  "name": "mongo2es5",
   "version": "0.0.1",
-  "description": "A mongo to elasticsearch connector",
+  "description": "A MongoDB to Elasticsearch 5.x connector",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.js",
   "scripts": {
@@ -12,14 +12,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ruguoapp/mongoes.git"
+    "url": "git+https://github.com/jike-engineering/Mongo2ES5.git"
   },
   "author": "",
   "license": "MPL",
   "bugs": {
-    "url": "https://github.com/ruguoapp/mongoes/issues"
+    "url": "https://github.com/jike-engineering/Mongo2ES5/issues"
   },
-  "homepage": "https://github.com/ruguoapp/mongoes#readme",
+  "homepage": "https://github.com/jike-engineering/Mongo2ES5#readme",
+  "dependencies": {
+    "bson": "^1.0.4",
+    "elasticsearch": "^13.0.1",
+    "lodash": "^4.17.4",
+    "mongodb": "^2.2.26",
+    "rx": "^4.1.0",
+    "source-map-support": "^0.4.15",
+    "yargs": "^8.0.1"
+  },
   "devDependencies": {
     "@types/bson": "^1.0.3",
     "@types/elasticsearch": "^5.0.13",
@@ -29,14 +38,5 @@
     "@types/yargs": "^6.6.0",
     "ava": "^0.19.1",
     "typescript": "^2.3.2"
-  },
-  "dependencies": {
-    "bson": "^1.0.4",
-    "elasticsearch": "^13.0.1",
-    "lodash": "^4.17.4",
-    "mongodb": "^2.2.26",
-    "rx": "^4.1.0",
-    "source-map-support": "^0.4.15",
-    "yargs": "^8.0.1"
   }
 }
