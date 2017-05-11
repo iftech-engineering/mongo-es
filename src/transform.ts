@@ -37,7 +37,7 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
         },
       },
     }, (err, response) => {
-      err ? reject(err) : resolve(response.hits.total ? (response.hits.hits[0]._source) as Document : null)
+      err ? reject(err) : resolve(response.hits.total > 0 ? (response.hits.hits[0]._source) as Document : null)
     })
   })
 }

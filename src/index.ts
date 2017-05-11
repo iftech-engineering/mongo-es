@@ -2,10 +2,11 @@ import 'source-map-support/register'
 import { parse, format } from 'url'
 import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
-import { forEach } from 'lodash'
+import { forEach, map, compact } from 'lodash'
 import { scan, tail } from './extract'
 import { document, oplog } from './transform'
-import { Config } from './types'
+import { bulk } from './load'
+import { Config, IntermediateRepresentation } from './types'
 import { init } from './models'
 
 async function readConfig(path: string): Promise<Config> {
@@ -21,13 +22,25 @@ async function run() {
   await init(config)
   const now = new Date(0)
   forEach(config.tasks, task => {
-    scan(task.extract, config.mongo.provisionedReadCapacity).subscribe((doc) => {
-      console.log(task.extract.collection, document(task, doc))
-    }, console.error, () => {
-      tail(task.extract, now, config.mongo.provisionedReadCapacity).subscribe(async (log) => {
-        console.log(task.extract.collection, await oplog(task, log))
-      }, console.error)
-    })
+    console.log('scan', 'start', task)
+    scan(task.extract, config.mongo.provisionedReadCapacity)
+      .bufferWithTimeOrCount(1000, 1000)
+      .subscribe(async (docs) => {
+        console.log('scan', docs.length)
+      }, (err) => {
+        console.error('scan', err)
+      }, () => {
+        console.log('tail', 'start', task)
+        tail(task.extract, now, config.mongo.provisionedReadCapacity)
+          .bufferWithTimeOrCount(1000, 1000)
+          .subscribe((logs) => {
+            console.log('scan', logs.length)
+          }, (err) => {
+            console.error('tail', err)
+          }, () => {
+            console.error('tail', 'should not complete')
+          })
+      })
   })
 }
 

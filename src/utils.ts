@@ -2,9 +2,9 @@ import { Readable } from 'stream'
 
 let consumedReadCapacity = 0
 
-export function controlReadCapacity(stream: Readable, provisionedReadCapacity?: number): Readable {
+export function controlReadCapacity(stream: Readable, provisionedReadCapacity?: number): void {
   if (!provisionedReadCapacity) {
-    return stream
+    return
   }
   const timer = setInterval(() => {
     consumedReadCapacity = 0
@@ -19,5 +19,4 @@ export function controlReadCapacity(stream: Readable, provisionedReadCapacity?: 
   stream.addListener('end', () => {
     clearInterval(timer)
   })
-  return stream
 }
