@@ -4,7 +4,7 @@ import { Observable } from 'rx'
 import { MongoClient } from 'mongodb'
 import { mapValues } from 'lodash'
 import { MongoConfig, ExtractTask } from './types'
-import { limitStreamReadSpeed } from './utils'
+import { controlReadCapacity } from './utils'
 
 export function scan(config: MongoConfig, task: ExtractTask): Observable<any> {
   return Observable.create(async (observer) => {
@@ -13,7 +13,12 @@ export function scan(config: MongoConfig, task: ExtractTask): Observable<any> {
       url.pathname = `/${task.db}`
       const db = await MongoClient.connect(format(url), config.options)
       const collection = db.collection(task.collection)
-      const stream = limitStreamReadSpeed(collection.find(task.query, task.fields).sort(task.sort).stream(), task.maxDPS)
+      const stream = collection
+        .find(task.query)
+        .project(task.projection)
+        .sort(task.sort)
+        .stream()
+      controlReadCapacity(stream, config.provisionedReadCapacity)
       stream.on('data', (doc) => {
         observer.onNext(doc)
       })

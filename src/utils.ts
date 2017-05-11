@@ -1,17 +1,18 @@
 import { Readable } from 'stream'
 
-export function limitStreamReadSpeed(stream: Readable, maxDPS?: number): Readable {
-  if (!maxDPS) {
+let consumedReadCapacity = 0
+
+export function controlReadCapacity(stream: Readable, provisionedReadCapacity?: number): Readable {
+  if (!provisionedReadCapacity) {
     return stream
   }
-  let dataCount = 0
   const timer = setInterval(() => {
-    dataCount = 0
+    consumedReadCapacity = 0
     stream.resume()
   }, 1000)
   stream.addListener('data', (doc) => {
-    dataCount++
-    if (dataCount >= maxDPS) {
+    consumedReadCapacity++
+    if (consumedReadCapacity >= provisionedReadCapacity) {
       stream.pause()
     }
   })

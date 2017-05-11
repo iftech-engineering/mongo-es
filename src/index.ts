@@ -3,6 +3,7 @@ import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
 import { forEach } from 'lodash'
 import { scan, tail } from './extract'
+import { document } from './transform'
 import { Config } from './types'
 
 async function readConfig(path: string): Promise<Config> {
@@ -16,8 +17,10 @@ async function readConfig(path: string): Promise<Config> {
 async function run() {
   const config = await readConfig(process.argv[2])
   forEach(config.tasks, task => {
-    scan(config.mongo, task.extract).subscribe(console.log, console.error)
-    tail(config.mongo, task.extract, new Date()).subscribe(console.log, console.error)
+    scan(config.mongo, task.extract).subscribe(async (doc) => {
+      console.log(task.extract.collection, await document(task.transform, doc))
+    }, console.error)
+    // tail(config.mongo, task.extract, new Date()).subscribe(console.log, console.error)
   })
 }
 

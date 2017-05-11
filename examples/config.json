@@ -5,7 +5,8 @@
       "authSource": "admin",
       "poolSize": 3,
       "readPreference": "secondaryPreferred"
-    }
+    },
+    "provisionedReadCapacity": 10000
   },
   "es": {
     "options": {
@@ -26,15 +27,14 @@
             "gte": 1494000000000
           }
         },
-        "fields": {
+        "projection": {
           "field0": 1,
           "field1": 1,
           "field2": 1
         },
         "sort": {
           "$natural": -1
-        },
-        "maxDPS": 10000
+        }
       },
       "transform": {
         "mapping": {
@@ -70,13 +70,12 @@
         "db": "db0",
         "collection": "collection1",
         "query": {},
-        "fields": {
+        "projection": {
           "field3": 1
         },
         "sort": {
           "$natural": 1
-        },
-        "maxDPS": 1000
+        }
       },
       "transform": {
         "mapping": {
