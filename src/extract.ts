@@ -1,24 +1,19 @@
-import { parse, format } from 'url'
 import { Timestamp } from 'bson'
 import { Observable } from 'rx'
-import { MongoClient } from 'mongodb'
 import { mapValues } from 'lodash'
-import { MongoConfig, ExtractTask } from './types'
+import { ExtractTask } from './types'
 import { controlReadCapacity } from './utils'
+import { mongo, elasticsearch } from './models'
 
-export function scan(config: MongoConfig, task: ExtractTask): Observable<any> {
+export function scan(task: ExtractTask, provisionedReadCapacity?: number): Observable<any> {
   return Observable.create(async (observer) => {
     try {
-      const url = parse(config.url)
-      url.pathname = `/${task.db}`
-      const db = await MongoClient.connect(format(url), config.options)
-      const collection = db.collection(task.collection)
-      const stream = collection
+      const stream = mongo()[task.db].collection(task.collection)
         .find(task.query)
         .project(task.projection)
         .sort(task.sort)
         .stream()
-      controlReadCapacity(stream, config.provisionedReadCapacity)
+      controlReadCapacity(stream, provisionedReadCapacity)
       stream.on('data', (doc) => {
         observer.onNext(doc)
       })
@@ -34,27 +29,26 @@ export function scan(config: MongoConfig, task: ExtractTask): Observable<any> {
   })
 }
 
-export function tail(config: MongoConfig, task: ExtractTask, from: Date): Observable<any> {
+export function tail(task: ExtractTask, from: Date, provisionedReadCapacity?: number): Observable<any> {
   return Observable.create(async (observer) => {
     try {
-      const url = parse(config.url)
-      url.pathname = '/local'
-      const db = await MongoClient.connect(format(url), config.options)
-      const oplog = db.collection('oplog.rs')
-      const stream = oplog.find({
-        ns: `${task.db}.${task.collection}`,
-        ts: {
-          $gte: new Timestamp(from.getTime(), 0),
-        },
-        fromMigrate: {
-          $exists: false,
-        },
-      }, {
+      const stream = mongo()['local'].collection('oplog.rs')
+        .find({
+          ns: `${task.db}.${task.collection}`,
+          ts: {
+            $gte: new Timestamp(from.getTime(), 0),
+          },
+          fromMigrate: {
+            $exists: false,
+          },
+        }, {
           tailable: true,
           oplogReplay: true,
           noCursorTimeout: true,
           awaitData: true,
-        }).stream()
+        })
+        .stream()
+      controlReadCapacity(stream, provisionedReadCapacity)
       stream.on('data', (doc) => {
         observer.onNext(doc)
       })

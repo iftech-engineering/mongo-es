@@ -1,10 +1,10 @@
-import { MongoClientOptions } from 'mongodb'
-import { ConfigOptions } from 'elasticsearch'
-import { Timestamp } from 'bson'
+import { MongoClientOptions, Db } from 'mongodb'
+import { Client, ConfigOptions } from 'elasticsearch'
+import { Timestamp, ObjectID } from 'bson'
 
 export type Config = {
   mongo: MongoConfig
-  es: ElasticsearchConfig
+  elasticsearch: ElasticsearchConfig
   tasks: Task[]
 }
 
@@ -37,8 +37,9 @@ export type ExtractTask = {
 }
 
 export type TransformTask = {
+  parent: string
   mapping: {
-    [key: string]: string | '_parent'
+    [key: string]: string
   }
 }
 
@@ -56,7 +57,7 @@ export type LoadTask = {
 }
 
 export type Document = {
-  _id: string
+  _id: ObjectID
   [key: string]: any
 }
 
@@ -64,18 +65,32 @@ export type OpLog = {
   ts: Timestamp
   h: number
   v: number
-  op: 'i' | 'd' | 'u'
   ns: string
   fromMigrate: boolean
-  o: {
-    _id: string
-    [key: string]: any
-  }
-  o2?: {
-    _id: string
-    [key: string]: any
-  }
-}
+} & (
+    {
+      op: 'i'
+      o: {
+        _id: ObjectID
+        [key: string]: any
+      }
+    } | {
+      op: 'u'
+      o: {
+        $set: any
+        $unset: any
+        [key: string]: any
+      }
+      o2: {
+        _id: ObjectID
+      }
+    } | {
+      op: 'd'
+      o: {
+        _id: ObjectID
+      }
+    }
+  )
 
 export type IntermediateRepresentation = {
   action: 'create' | 'update' | 'delete'
@@ -83,3 +98,11 @@ export type IntermediateRepresentation = {
   parent?: string
   data: any
 }
+
+export type Mongo = {
+  [key: string]: Db
+}
+
+export type Elasticsearch = Client
+
+export type ObjectID = ObjectID
