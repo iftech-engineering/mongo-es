@@ -1,6 +1,33 @@
 import { forEach } from 'lodash'
 import { IntermediateRepresentation, LoadTask } from './types'
 import { elasticsearch } from './models'
+import { IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
+
+export async function create(params: IndicesCreateParams): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    elasticsearch().indices.create(params, (err, response) => {
+      err ? reject(err) : resolve(response)
+    })
+  })
+}
+
+export async function putMapping(params: IndicesPutMappingParams): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    elasticsearch().indices.putMapping(params, (err, response) => {
+      err ? reject(err) : resolve(response)
+    })
+  })
+}
+
+export async function exists(name: string): Promise<boolean> {
+  return new Promise<boolean>((resolve, reject) => {
+    elasticsearch().indices.exists({
+      index: name
+    }, (err, response) => {
+      err ? reject(err) : resolve(response)
+    })
+  })
+}
 
 export async function bulk(task: LoadTask, IRs: IntermediateRepresentation[]): Promise<void> {
   const body: any[] = []

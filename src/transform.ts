@@ -2,7 +2,7 @@ import { forEach, size, get, set, keys } from 'lodash'
 import { Task, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
 import { mongo, elasticsearch } from './models'
 
-function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Document): IntermediateRepresentation {
+function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Document): IntermediateRepresentation | null {
   const IR: IntermediateRepresentation = {
     action,
     id: doc._id.toHexString(),
@@ -15,6 +15,9 @@ function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Do
   forEach(task.transform.mapping, (value, key) => {
     set(IR.data, value, get(doc, key))
   })
+  if (size(IR.data) === 0) {
+    return null
+  }
   return IR
 }
 
@@ -24,7 +27,7 @@ async function retrieveFromMongo(task: Task, id: ObjectID): Promise<Document | n
       _id: id.toHexString(),
     }) || null
   } catch (err) {
-    console.warn('retrieveFromMongo', err)
+    console.warn('retrieveFromMongo', id, err.message)
     return null
   }
 }
@@ -43,7 +46,7 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
       },
     }, (err, response) => {
       if (err) {
-        console.warn('searchFromElasticsearch', err)
+        console.warn('searchFromElasticsearch', id, err.message)
         resolve(null)
         return
       }
@@ -55,12 +58,12 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
 async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
   return new Promise<Document | null>((resolve, reject) => {
     elasticsearch().get<Document>({
-      index: task.load.index,
+      index: task.load.index as string,
       type: task.load.type,
       id: id.toHexString(),
     }, (err, response) => {
       if (err) {
-        console.warn('searchFromElasticsearch', err)
+        console.warn('searchFromElasticsearch', id, err.message)
         resolve(null)
         return
       }
@@ -69,7 +72,7 @@ async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Docu
   })
 }
 
-export function document(task: Task, doc: Document): IntermediateRepresentation {
+export function document(task: Task, doc: Document): IntermediateRepresentation | null {
   return transformer('create', task, doc)
 }
 

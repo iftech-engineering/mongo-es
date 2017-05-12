@@ -1,7 +1,8 @@
 {
-  "limitions": {
+  "controls": {
     "mongoReadCapacity": 10000,
-    "elasticsearchBulkSize": 5000
+    "elasticsearchBulkSize": 5000,
+    "tailFromTime": "2017-05-12T07:47:16.030Z"
   },
   "mongo": {
     "url": "mongodb://user:password@localhost:27017/db?replicaSet=rs0",
@@ -18,6 +19,18 @@
       "sniff_on_start": true,
       "sniff_on_connection_fail": true,
       "sniffer_timeout": 60
+    },
+    "index": {
+      "index": "index0",
+      "body": {
+        "settings": {
+          "index": {
+            "number_of_shards": 3,
+            "number_of_replicas": 1,
+            "mapper.dynamic": false
+          }
+        }
+      }
     }
   },
   "tasks": [
@@ -49,7 +62,7 @@
       "load": {
         "index": "index0",
         "type": "type0",
-        "mapping": {
+        "body": {
           "dynamic": false,
           "_parent": {
             "type": "type1"
@@ -88,7 +101,7 @@
       "load": {
         "index": "index0",
         "type": "type1",
-        "mapping": {
+        "body": {
           "dynamic": false,
           "properties": {
             "property3": {

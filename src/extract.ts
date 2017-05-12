@@ -7,7 +7,7 @@ import { mongo, elasticsearch } from './models'
 
 let consumedReadCapacity = 0
 
-function controlReadCapacity(stream: Readable, provisionedReadCapacity?: number): void {
+function controlReadCapacity(stream: Readable, provisionedReadCapacity: number): void {
   if (!provisionedReadCapacity) {
     return
   }
@@ -26,7 +26,7 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity?: number)
   })
 }
 
-export function scan(task: ExtractTask, provisionedReadCapacity?: number): Observable<any> {
+export function scan(task: ExtractTask, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
     try {
       const stream = mongo()[task.db].collection(task.collection)
@@ -50,7 +50,7 @@ export function scan(task: ExtractTask, provisionedReadCapacity?: number): Obser
   })
 }
 
-export function tail(task: ExtractTask, from: Date, provisionedReadCapacity?: number): Observable<any> {
+export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
     try {
       const stream = mongo()['local'].collection('oplog.rs')

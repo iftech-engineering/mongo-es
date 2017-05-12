@@ -1,15 +1,12 @@
 import { MongoClientOptions, Db } from 'mongodb'
-import { Client, ConfigOptions } from 'elasticsearch'
+import { Client, ConfigOptions, IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
 import { Timestamp, ObjectID } from 'bson'
 
 export type Config = {
   mongo: MongoConfig
   elasticsearch: ElasticsearchConfig
   tasks: Task[]
-  limitions: {
-    mongoReadCapacity: number
-    elasticsearchBulkSize: number
-  }
+  controls: Controls
 }
 
 export type MongoConfig = {
@@ -19,12 +16,19 @@ export type MongoConfig = {
 
 export type ElasticsearchConfig = {
   options: ConfigOptions
+  index: IndicesCreateParams
 }
 
 export type Task = {
   extract: ExtractTask
   transform: TransformTask
   load: LoadTask
+}
+
+export type Controls = {
+  tailFromTime?: number | string
+  mongoReadCapacity?: number
+  elasticsearchBulkSize?: number
 }
 
 export type ExtractTask = {
@@ -46,18 +50,7 @@ export type TransformTask = {
   }
 }
 
-export type LoadTask = {
-  index: string
-  type: string
-  mapping: {
-    _parent?: {
-      type: string
-    }
-    properties: {
-      [key: string]: any
-    }
-  }
-}
+export type LoadTask = IndicesPutMappingParams
 
 export type Document = {
   _id: ObjectID
