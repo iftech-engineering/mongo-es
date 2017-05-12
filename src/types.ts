@@ -1,6 +1,6 @@
 import { MongoClientOptions, Db } from 'mongodb'
 import { Client, ConfigOptions, IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
-import { Timestamp, ObjectID } from 'bson'
+import { Timestamp, ObjectId } from 'bson'
 
 export type Config = {
   mongo: MongoConfig
@@ -53,7 +53,7 @@ export type TransformTask = {
 export type LoadTask = IndicesPutMappingParams
 
 export type Document = {
-  _id: ObjectID
+  _id: ObjectId
   [key: string]: any
 }
 
@@ -67,7 +67,7 @@ export type OpLog = {
     {
       op: 'i'
       o: {
-        _id: ObjectID
+        _id: ObjectId
         [key: string]: any
       }
     } | {
@@ -78,12 +78,12 @@ export type OpLog = {
         [key: string]: any
       }
       o2: {
-        _id: ObjectID
+        _id: ObjectId
       }
     } | {
       op: 'd'
       o: {
-        _id: ObjectID
+        _id: ObjectId
       }
     }
   )
@@ -101,4 +101,4 @@ export type Mongo = {
 
 export type Elasticsearch = Client
 
-export type ObjectID = ObjectID
+export { ObjectId }

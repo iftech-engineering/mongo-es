@@ -71,7 +71,7 @@ async function run() {
   try {
     const config = await readConfig(process.argv[2])
     await init(config)
-    const now = config.controls.tailFromTime
+    const from = config.controls.tailFromTime
       ? new Date(config.controls.tailFromTime)
       : new Date()
 
@@ -97,8 +97,8 @@ async function run() {
       }
       try {
         console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
-          '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
-        await tailOpLog(config.controls, task, now)
+          '->', `Elasticsearch: ${task.load.index}.${task.load.type}`, 'from', from)
+        await tailOpLog(config.controls, task, from)
         console.error('tail', 'should not end')
       } catch (err) {
         console.error('tail', err)
@@ -108,5 +108,7 @@ async function run() {
     console.error('run', err)
   }
 }
+
+console.debug = process.env.NODE_ENV === 'dev' ? console.log : () => null
 
 run()

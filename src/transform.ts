@@ -1,5 +1,5 @@
 import { forEach, size, get, set, keys } from 'lodash'
-import { Task, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
+import { Task, Document, OpLog, IntermediateRepresentation, ObjectId } from './types'
 import { mongo, elasticsearch } from './models'
 
 function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Document): IntermediateRepresentation | null {
@@ -21,7 +21,7 @@ function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Do
   return IR
 }
 
-async function retrieveFromMongo(task: Task, id: ObjectID): Promise<Document | null> {
+async function retrieveFromMongo(task: Task, id: ObjectId): Promise<Document | null> {
   try {
     return await mongo()[task.extract.db].collection(task.extract.collection).findOne({
       _id: id.toHexString(),
@@ -32,7 +32,7 @@ async function retrieveFromMongo(task: Task, id: ObjectID): Promise<Document | n
   }
 }
 
-async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
+async function searchFromElasticsearch(task: Task, id: ObjectId): Promise<Document | null> {
   return new Promise<Document | null>((resolve, reject) => {
     elasticsearch().search<Document>({
       index: task.load.index,
@@ -50,12 +50,15 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
         resolve(null)
         return
       }
-      resolve(response.hits.total > 0 ? (response.hits.hits[0]._source) as Document : null)
+      resolve(response.hits.total > 0 ? {
+        ...response.hits.hits[0]._source,
+        _id: ObjectId.createFromHexString(response.hits.hits[0]._id)
+      } : null)
     })
   })
 }
 
-async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
+async function retrieveFromElasticsearch(task: Task, id: ObjectId): Promise<Document | null> {
   return new Promise<Document | null>((resolve, reject) => {
     elasticsearch().get<Document>({
       index: task.load.index as string,
@@ -67,7 +70,10 @@ async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Docu
         resolve(null)
         return
       }
-      resolve(response ? response._source as Document : null)
+      resolve(response ? {
+        ...response._source,
+        _id: ObjectId.createFromHexString(response._id)
+      } : null)
     })
   })
 }
@@ -77,6 +83,7 @@ export function document(task: Task, doc: Document): IntermediateRepresentation 
 }
 
 export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepresentation | null> {
+  console.debug(oplog)
   try {
     switch (oplog.op) {
       case 'i': {
@@ -97,12 +104,18 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
           ? await searchFromElasticsearch(task, oplog.o2._id)
           : await retrieveFromElasticsearch(task, oplog.o2._id)
         ) || await retrieveFromMongo(task, oplog.o2._id)
+        console.debug(doc)
         return doc ? transformer('update', task, doc) : null
       }
       case 'd': {
+        if (size(oplog.o) !== 1 || !oplog.o._id) {
+          console.warn('oplog', 'cannot transform', oplog)
+          return null
+        }
         const doc = task.transform.parent
           ? await retrieveFromElasticsearch(task, oplog.o._id)
           : oplog.o
+        console.debug(doc)
         return doc ? transformer('delete', task, doc) : null
       }
       default: {
