@@ -28,8 +28,9 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
 
 export function scan(task: ExtractTask, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
+    const db = mongo()[task.db]
     try {
-      const stream = mongo()[task.db].collection(task.collection)
+      const stream = db.collection(task.collection)
         .find(task.query)
         .project(task.projection)
         .sort(task.sort)
@@ -40,20 +41,24 @@ export function scan(task: ExtractTask, provisionedReadCapacity: number): Observ
       })
       stream.on('error', (err) => {
         observer.onError(err)
+        db.close()
       })
       stream.on('end', () => {
         observer.onCompleted()
+        db.close()
       })
     } catch (err) {
       observer.onError(err)
+      db.close()
     }
   })
 }
 
 export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
+    const db = mongo()['local']
     try {
-      const stream = mongo()['local'].collection('oplog.rs')
+      const cursor = db.collection('oplog.rs')
         .find({
           ns: `${task.db}.${task.collection}`,
           ts: {
@@ -68,19 +73,15 @@ export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: num
           noCursorTimeout: true,
           awaitData: true,
         })
-        .stream()
-      controlReadCapacity(stream, provisionedReadCapacity)
-      stream.on('data', (doc) => {
+      cursor.forEach((doc => {
         observer.onNext(doc)
-      })
-      stream.on('error', (err) => {
-        observer.onError(err)
-      })
-      stream.on('end', () => {
+      }), () => {
         observer.onCompleted()
+        db.close()
       })
     } catch (err) {
       observer.onError(err)
+      db.close()
     }
   })
 }
