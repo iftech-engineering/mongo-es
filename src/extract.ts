@@ -1,9 +1,30 @@
+import { Readable } from 'stream'
 import { Timestamp } from 'bson'
 import { Observable } from 'rx'
 import { mapValues } from 'lodash'
 import { ExtractTask } from './types'
-import { controlReadCapacity } from './utils'
 import { mongo, elasticsearch } from './models'
+
+let consumedReadCapacity = 0
+
+function controlReadCapacity(stream: Readable, provisionedReadCapacity?: number): void {
+  if (!provisionedReadCapacity) {
+    return
+  }
+  const timer = setInterval(() => {
+    consumedReadCapacity = 0
+    stream.resume()
+  }, 1000)
+  stream.addListener('data', (doc) => {
+    consumedReadCapacity++
+    if (consumedReadCapacity >= provisionedReadCapacity) {
+      stream.pause()
+    }
+  })
+  stream.addListener('end', () => {
+    clearInterval(timer)
+  })
+}
 
 export function scan(task: ExtractTask, provisionedReadCapacity?: number): Observable<any> {
   return Observable.create(async (observer) => {

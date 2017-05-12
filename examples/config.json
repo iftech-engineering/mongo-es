@@ -1,12 +1,15 @@
 {
+  "limitions": {
+    "mongoReadCapacity": 10000,
+    "elasticsearchBulkSize": 5000
+  },
   "mongo": {
     "url": "mongodb://user:password@localhost:27017/db?replicaSet=rs0",
     "options": {
       "authSource": "admin",
       "poolSize": 3,
       "readPreference": "secondaryPreferred"
-    },
-    "provisionedReadCapacity": 10000
+    }
   },
   "elasticsearch": {
     "options": {

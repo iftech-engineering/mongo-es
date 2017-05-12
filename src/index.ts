@@ -24,8 +24,8 @@ async function run() {
   const now = new Date(0)
   forEach(config.tasks, task => {
     console.log('scan', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`, '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
-    scan(task.extract, config.mongo.provisionedReadCapacity)
-      .bufferWithTimeOrCount(1000, 1000)
+    scan(task.extract, config.limitions.mongoReadCapacity)
+      .bufferWithTimeOrCount(1000, config.limitions.elasticsearchBulkSize)
       .subscribe(async (docs) => {
         if (docs.length === 0) {
           return
@@ -40,7 +40,7 @@ async function run() {
         console.error('scan', err)
       }, () => {
         console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`, '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
-        tail(task.extract, now, config.mongo.provisionedReadCapacity)
+        tail(task.extract, now, config.limitions.mongoReadCapacity)
           .bufferWithTimeOrCount(1000, 50)
           .flatMap((logs) => {
             return Observable.create<IntermediateRepresentation>((observer) => {
@@ -54,7 +54,7 @@ async function run() {
               })
             })
           })
-          .bufferWithTimeOrCount(1000, 1000)
+          .bufferWithTimeOrCount(1000, config.limitions.elasticsearchBulkSize)
           .subscribe(async (docs) => {
             if (docs.length === 0) {
               return

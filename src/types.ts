@@ -6,12 +6,15 @@ export type Config = {
   mongo: MongoConfig
   elasticsearch: ElasticsearchConfig
   tasks: Task[]
+  limitions: {
+    mongoReadCapacity: number
+    elasticsearchBulkSize: number
+  }
 }
 
 export type MongoConfig = {
   url: string
   options: MongoClientOptions
-  provisionedReadCapacity: number
 }
 
 export type ElasticsearchConfig = {
