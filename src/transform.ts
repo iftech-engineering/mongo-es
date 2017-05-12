@@ -1,4 +1,4 @@
-import { forEach, size, get, set, keys } from 'lodash'
+import { forEach, size, get, set, has, keys } from 'lodash'
 import { Task, Document, OpLog, IntermediateRepresentation, ObjectId } from './types'
 import { mongo, elasticsearch } from './models'
 
@@ -13,7 +13,9 @@ function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Do
     return IR
   }
   forEach(task.transform.mapping, (value, key) => {
-    set(IR.data, value, get(doc, key))
+    if (has(doc, key)) {
+      set(IR.data, value, get(doc, key))
+    }
   })
   if (size(IR.data) === 0) {
     return null
@@ -21,11 +23,23 @@ function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Do
   return IR
 }
 
+function ignoreUpdate(task: Task, oplog: OpLog): boolean {
+  let ignore = true
+  if (oplog.op === 'u') {
+    forEach(task.transform.mapping, (value, key) => {
+      ignore = ignore && !(has(oplog.o, key) || has(oplog.o.$set, key) || has(oplog.o.$unset, key))
+    })
+  }
+  return ignore
+}
+
 async function retrieveFromMongo(task: Task, id: ObjectId): Promise<Document | null> {
   try {
-    return await mongo()[task.extract.db].collection(task.extract.collection).findOne({
-      _id: id.toHexString(),
-    }) || null
+    const doc = await mongo()[task.extract.db].collection(task.extract.collection).findOne({
+      _id: id,
+    })
+    console.debug('retrieveFromMongo', doc)
+    return doc
   } catch (err) {
     console.warn('retrieveFromMongo', id, err.message)
     return null
@@ -50,6 +64,7 @@ async function searchFromElasticsearch(task: Task, id: ObjectId): Promise<Docume
         resolve(null)
         return
       }
+      console.debug('searchFromElasticsearch', response)
       resolve(response.hits.total > 0 ? {
         ...response.hits.hits[0]._source,
         _id: ObjectId.createFromHexString(response.hits.hits[0]._id)
@@ -66,10 +81,11 @@ async function retrieveFromElasticsearch(task: Task, id: ObjectId): Promise<Docu
       id: id.toHexString(),
     }, (err, response) => {
       if (err) {
-        console.warn('searchFromElasticsearch', id, err.message)
+        console.warn('retrieveFromElasticsearch', id, err.message)
         resolve(null)
         return
       }
+      console.debug('retrieveFromElasticsearch', response)
       resolve(response ? {
         ...response._source,
         _id: ObjectId.createFromHexString(response._id)
@@ -83,7 +99,6 @@ export function document(task: Task, doc: Document): IntermediateRepresentation 
 }
 
 export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepresentation | null> {
-  console.debug(oplog)
   try {
     switch (oplog.op) {
       case 'i': {
@@ -92,6 +107,10 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
       case 'u': {
         if (size(oplog.o2) !== 1 || !oplog.o2._id) {
           console.warn('oplog', 'cannot transform', oplog)
+          return null
+        }
+        if (ignoreUpdate(task, oplog)) {
+          console.debug('ignoreUpdate', oplog)
           return null
         }
         if (keys(oplog.o).filter(key => key.startsWith('$')).length === 0) {
@@ -104,7 +123,6 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
           ? await searchFromElasticsearch(task, oplog.o2._id)
           : await retrieveFromElasticsearch(task, oplog.o2._id)
         ) || await retrieveFromMongo(task, oplog.o2._id)
-        console.debug(doc)
         return doc ? transformer('update', task, doc) : null
       }
       case 'd': {

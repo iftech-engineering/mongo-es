@@ -46,8 +46,6 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
             const doc = await oplog(task, log)
             if (doc) {
               observer.onNext(doc)
-            } else {
-              console.warn('tail', 'oplog not transformed', log)
             }
           })
         })
