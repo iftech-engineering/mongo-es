@@ -5,7 +5,7 @@ import { mongo, elasticsearch } from './models'
 function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Document): IntermediateRepresentation {
   const IR: IntermediateRepresentation = {
     action,
-    id: doc._id.toString(),
+    id: doc._id.toHexString(),
     data: {},
     parent: get<string>(doc, task.transform.parent)
   }
@@ -19,9 +19,14 @@ function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Do
 }
 
 async function retrieveFromMongo(task: Task, id: ObjectID): Promise<Document | null> {
-  return await mongo()[task.extract.db].collection(task.extract.collection).findOne({
-    _id: id.toString(),
-  }) || null
+  try {
+    return await mongo()[task.extract.db].collection(task.extract.collection).findOne({
+      _id: id.toHexString(),
+    }) || null
+  } catch (err) {
+    console.warn('retrieveFromMongo', err)
+    return null
+  }
 }
 
 async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
@@ -32,12 +37,17 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
       body: {
         query: {
           term: {
-            _id: id.toString(),
+            _id: id.toHexString(),
           },
         },
       },
     }, (err, response) => {
-      err ? reject(err) : resolve(response.hits.total > 0 ? (response.hits.hits[0]._source) as Document : null)
+      if (err) {
+        console.warn('searchFromElasticsearch', err)
+        resolve(null)
+        return
+      }
+      resolve(response.hits.total > 0 ? (response.hits.hits[0]._source) as Document : null)
     })
   })
 }
@@ -47,9 +57,14 @@ async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Docu
     elasticsearch().get<Document>({
       index: task.load.index,
       type: task.load.type,
-      id: id.toString(),
+      id: id.toHexString(),
     }, (err, response) => {
-      err ? reject(err) : resolve(response ? response._source as Document : null)
+      if (err) {
+        console.warn('searchFromElasticsearch', err)
+        resolve(null)
+        return
+      }
+      resolve(response ? response._source as Document : null)
     })
   })
 }
@@ -75,20 +90,16 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
             ...oplog.o,
           })
         }
-        if (!task.transform.parent) {
-          const doc = await retrieveFromElasticsearch(task, oplog.o2._id)
-            || await retrieveFromMongo(task, oplog.o2._id)
-          return doc ? transformer('update', task, doc) : null
-        }
-        const doc = await searchFromElasticsearch(task, oplog.o2._id)
-          || await retrieveFromMongo(task, oplog.o2._id)
+        const doc = (task.transform.parent
+          ? await searchFromElasticsearch(task, oplog.o2._id)
+          : await retrieveFromElasticsearch(task, oplog.o2._id)
+        ) || await retrieveFromMongo(task, oplog.o2._id)
         return doc ? transformer('update', task, doc) : null
       }
       case 'd': {
-        if (!task.transform.parent) {
-          return transformer('delete', task, oplog.o)
-        }
-        const doc = await retrieveFromElasticsearch(task, oplog.o._id)
+        const doc = task.transform.parent
+          ? await retrieveFromElasticsearch(task, oplog.o._id)
+          : oplog.o
         return doc ? transformer('delete', task, doc) : null
       }
       default: {

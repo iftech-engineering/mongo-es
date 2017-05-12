@@ -1,4 +1,4 @@
-import { flatten, compact, forEach } from 'lodash'
+import { forEach } from 'lodash'
 import { IntermediateRepresentation, LoadTask } from './types'
 import { elasticsearch } from './models'
 

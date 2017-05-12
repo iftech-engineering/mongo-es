@@ -2,7 +2,8 @@ import 'source-map-support/register'
 import { parse, format } from 'url'
 import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
-import { forEach, map, compact } from 'lodash'
+import { forEach, map } from 'lodash'
+import { Observable } from 'rx'
 import { scan, tail } from './extract'
 import { document, oplog } from './transform'
 import { bulk } from './load'
@@ -22,19 +23,48 @@ async function run() {
   await init(config)
   const now = new Date(0)
   forEach(config.tasks, task => {
-    console.log('scan', 'start', task)
+    console.log('scan', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`, '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
     scan(task.extract, config.mongo.provisionedReadCapacity)
       .bufferWithTimeOrCount(1000, 1000)
       .subscribe(async (docs) => {
-        console.log('scan', docs.length)
+        if (docs.length === 0) {
+          return
+        }
+        try {
+          await bulk(task.load, map(docs, doc => document(task, doc)))
+          console.log('scan', docs.length)
+        } catch (err) {
+          console.error('scan', err)
+        }
       }, (err) => {
         console.error('scan', err)
       }, () => {
-        console.log('tail', 'start', task)
+        console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`, '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
         tail(task.extract, now, config.mongo.provisionedReadCapacity)
+          .bufferWithTimeOrCount(1000, 50)
+          .flatMap((logs) => {
+            return Observable.create<IntermediateRepresentation>((observer) => {
+              forEach(logs, async (log) => {
+                const doc = await oplog(task, log)
+                if (doc) {
+                  observer.onNext(doc)
+                } else {
+                  console.warn('tail', 'oplog not transformed', log)
+                }
+              })
+            })
+          })
           .bufferWithTimeOrCount(1000, 1000)
-          .subscribe((logs) => {
-            console.log('scan', logs.length)
+          .subscribe(async (docs) => {
+            if (docs.length === 0) {
+              return
+            }
+            try {
+              await bulk(task.load, docs)
+              console.log('tail', docs.length)
+            } catch (err) {
+              console.error('tail', err)
+            }
           }, (err) => {
             console.error('tail', err)
           }, () => {
