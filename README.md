@@ -20,7 +20,7 @@ NODE_ENV=dev mongo-es ./config.json
 scan entire database (or select with query) for existed documents
 
 ### Tail phase
-tail the oplog for new documents, updates or deletions
+tail the oplog for documents' create, update or delete
 
 ## Configuration
 Structure:
@@ -38,7 +38,7 @@ Structure:
   ]
 }
 ```
-[Detail example](https://github.com/jike-engineering/Mongo2ES5/tree/master/examples)
+[Detail example](https://github.com/jike-engineering/mongo-es/blob/master/examples/config.json)
 
 ### controls
 - `mongodbReadCapacity` - Max docs read per second (default: `10000`).
@@ -59,11 +59,10 @@ Structure:
 - `db` - Database name.
 - `collection` - Collection name in database.
 - `query` - Query selector, see [Query](https://docs.mongodb.com/manual/reference/operator/query/#query-selectors).
-**notice**: not work in [Tail phase](https://github.com/jike-engineering/Mongo2ES5#tail-phase).
+**notice**: not work in [Tail phase](https://github.com/jike-engineering/mongo-es#tail-phase).
 - `projection` - Projection selector, see [Projection](https://docs.mongodb.com/manual/reference/operator/projection/).
-**notice**: works in [Tail phase](https://github.com/jike-engineering/Mongo2ES5#tail-phase).
+**notice**: works in [Tail phase](https://github.com/jike-engineering/mongo-es#tail-phase).
 - `sort` Sort order of the result set. **recommend**: `{ "$natural": -1 }`, new documents first, see [Sort](https://docs.mongodb.com/manual/reference/method/cursor.sort/).
-
 
 ### task.transform
 - `mapping` - The field mapping from mongodb's collection to elasticsearch's index.
