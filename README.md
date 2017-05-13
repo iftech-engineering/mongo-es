@@ -1,6 +1,5 @@
 # Mongo2ES5
-
-## A MongoDB to Elasticsearch 5.x connector
+A MongoDB to Elasticsearch 5.x connector
 
 ## Installation
 ```bash
