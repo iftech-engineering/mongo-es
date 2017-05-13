@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import 'source-map-support/register'
 import { parse, format } from 'url'
 import { readFile } from 'fs'
@@ -65,7 +67,7 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
   })
 }
 
-async function run() {
+async function start() {
   try {
     const config = await readConfig(process.argv[2])
     await init(config)
@@ -109,4 +111,4 @@ async function run() {
 
 console.debug = process.env.NODE_ENV === 'dev' ? console.log : () => null
 
-run()
+start()
