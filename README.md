@@ -1,18 +1,18 @@
-# Mongo2ES5
+# Mongo-ES
 A MongoDB to Elasticsearch connector
 
 ## Installation
 ```bash
-npm i -g mongo2es5
+npm i -g mongo-es
 ```
 
 ## Usage
 ```bash
 # normal mode
-mongo2es5 ./config.json
+mongo-es ./config.json
 
 # debug mode, with debug info printed
-NODE_ENV=dev mongo2es5 ./config.json
+NODE_ENV=dev mongo-es ./config.json
 ```
 
 ## Concepts

@@ -1,7 +1,7 @@
 {
-  "name": "mongo2es5",
-  "version": "1.0.1",
-  "description": "A MongoDB to Elasticsearch 5.x connector",
+  "name": "mongo-es",
+  "version": "0.0.1",
+  "description": "A MongoDB to Elasticsearch connector",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.js",
   "scripts": {
@@ -14,18 +14,18 @@
     "registry": "https://registry.npmjs.com"
   },
   "bin": {
-    "mongo2es5": "./dist/src/index.js"
+    "mongo-es": "./dist/src/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jike-engineering/Mongo2ES5.git"
+    "url": "git+https://github.com/jike-engineering/Mongo-ES.git"
   },
   "author": "",
   "license": "MPL",
   "bugs": {
-    "url": "https://github.com/jike-engineering/Mongo2ES5/issues"
+    "url": "https://github.com/jike-engineering/Mongo-ES/issues"
   },
-  "homepage": "https://github.com/jike-engineering/Mongo2ES5#readme",
+  "homepage": "https://github.com/jike-engineering/Mongo-ES#readme",
   "dependencies": {
     "bson": "^1.0.4",
     "elasticsearch": "^13.0.1",
