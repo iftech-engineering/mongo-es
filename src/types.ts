@@ -11,12 +11,12 @@ export type Config = {
 
 export type MongoConfig = {
   url: string
-  options: MongoClientOptions
+  options?: MongoClientOptions
 }
 
 export type ElasticsearchConfig = {
   options: ConfigOptions
-  index: IndicesCreateParams
+  index?: IndicesCreateParams
 }
 
 export type Task = {

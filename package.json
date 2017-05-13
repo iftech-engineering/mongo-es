@@ -1,6 +1,6 @@
 {
   "name": "mongo2es5",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A MongoDB to Elasticsearch 5.x connector",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.js",
