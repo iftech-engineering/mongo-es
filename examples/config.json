@@ -1,10 +1,10 @@
 {
   "controls": {
-    "mongoReadCapacity": 10000,
+    "mongodbReadCapacity": 10000,
     "elasticsearchBulkSize": 5000,
     "tailFromTime": "2017-05-12T07:47:16.030Z"
   },
-  "mongo": {
+  "mongodb": {
     "url": "mongodb://user:password@localhost:27017/db?replicaSet=rs0",
     "options": {
       "authSource": "admin",

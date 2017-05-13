@@ -1,26 +1,26 @@
 import { parse, format } from 'url'
 import { MongoClient, Collection } from 'mongodb'
 import { Client } from 'elasticsearch'
-import { Config, Mongo, Elasticsearch } from './types'
+import { Config, MongoDB, Elasticsearch } from './types'
 
-let _mongo: Mongo
+let _mongodb: MongoDB
 let _elasticsearch: Elasticsearch
 
 export async function init(config: Config): Promise<void> {
-  _mongo = {}
-  const url = parse(config.mongo.url)
+  _mongodb = {}
+  const url = parse(config.mongodb.url)
   url.pathname = `/local`
-  _mongo['local'] = await MongoClient.connect(format(url), config.mongo.options)
+  _mongodb['local'] = await MongoClient.connect(format(url), config.mongodb.options)
   for (let task of config.tasks) {
-    const url = parse(config.mongo.url)
+    const url = parse(config.mongodb.url)
     url.pathname = `/${task.extract.db}`
-    _mongo[task.extract.db] = await MongoClient.connect(format(url), config.mongo.options)
+    _mongodb[task.extract.db] = await MongoClient.connect(format(url), config.mongodb.options)
   }
   _elasticsearch = new Client(config.elasticsearch.options)
 }
 
-export function mongo() {
-  return _mongo
+export function mongodb() {
+  return _mongodb
 }
 
 export function elasticsearch() {

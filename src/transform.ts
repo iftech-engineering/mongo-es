@@ -1,6 +1,6 @@
 import { forEach, size, get, set, has, keys } from 'lodash'
 import { Task, Document, OpLog, IntermediateRepresentation, ObjectId } from './types'
-import { mongo, elasticsearch } from './models'
+import { mongodb, elasticsearch } from './models'
 
 function transformer(action: 'create' | 'update' | 'delete', task: Task, doc: Document): IntermediateRepresentation | null {
   const IR: IntermediateRepresentation = {
@@ -33,15 +33,15 @@ function ignoreUpdate(task: Task, oplog: OpLog): boolean {
   return ignore
 }
 
-async function retrieveFromMongo(task: Task, id: ObjectId): Promise<Document | null> {
+async function retrieveFromMongoDB(task: Task, id: ObjectId): Promise<Document | null> {
   try {
-    const doc = await mongo()[task.extract.db].collection(task.extract.collection).findOne({
+    const doc = await mongodb()[task.extract.db].collection(task.extract.collection).findOne({
       _id: id,
     })
-    console.debug('retrieveFromMongo', doc)
+    console.debug('retrieveFromMongoDB', doc)
     return doc
   } catch (err) {
-    console.warn('retrieveFromMongo', id, err.message)
+    console.warn('retrieveFromMongoDB', id, err.message)
     return null
   }
 }
@@ -122,7 +122,7 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
         const doc = (task.transform.parent
           ? await searchFromElasticsearch(task, oplog.o2._id)
           : await retrieveFromElasticsearch(task, oplog.o2._id)
-        ) || await retrieveFromMongo(task, oplog.o2._id)
+        ) || await retrieveFromMongoDB(task, oplog.o2._id)
         return doc ? transformer('update', task, doc) : null
       }
       case 'd': {

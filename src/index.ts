@@ -22,7 +22,7 @@ async function readConfig(path: string): Promise<Config> {
 
 async function scanDocument(controls: Controls, task: Task): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    scan(task.extract, controls.mongoReadCapacity || 10000)
+    scan(task.extract, controls.mongodbReadCapacity || 10000)
       .bufferWithTimeOrCount(1000, controls.elasticsearchBulkSize || 5000)
       .subscribe(async (docs) => {
         if (docs.length === 0) {
@@ -40,7 +40,7 @@ async function scanDocument(controls: Controls, task: Task): Promise<void> {
 
 async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<never> {
   return new Promise<never>((resolve, reject) => {
-    tail(task.extract, from, controls.mongoReadCapacity || 10000)
+    tail(task.extract, from, controls.mongodbReadCapacity || 10000)
       .bufferWithTimeOrCount(1000, 50)
       .flatMap((logs) => {
         return Observable.create<IntermediateRepresentation>((observer) => {

@@ -3,7 +3,7 @@ import { Client, ConfigOptions, IndicesCreateParams, IndicesPutMappingParams } f
 import { Timestamp, ObjectId } from 'bson'
 
 export type Config = {
-  mongo: MongoConfig
+  mongodb: MongoConfig
   elasticsearch: ElasticsearchConfig
   tasks: Task[]
   controls: Controls
@@ -27,7 +27,7 @@ export type Task = {
 
 export type Controls = {
   tailFromTime?: number | string
-  mongoReadCapacity?: number
+  mongodbReadCapacity?: number
   elasticsearchBulkSize?: number
 }
 
@@ -95,7 +95,7 @@ export type IntermediateRepresentation = {
   data: any
 }
 
-export type Mongo = {
+export type MongoDB = {
   [key: string]: Db
 }
 

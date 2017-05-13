@@ -1,5 +1,5 @@
 # Mongo2ES5
-A MongoDB to Elasticsearch 5.x connector
+A MongoDB to Elasticsearch connector
 
 ## Installation
 ```bash
@@ -27,7 +27,7 @@ Structure:
 ```json
 {
   "controls": {},
-  "mongo": {},  
+  "mongodb": {},  
   "elasticsearch": {},
   "tasks": [
     {
@@ -41,11 +41,11 @@ Structure:
 [Detail example](https://github.com/jike-engineering/Mongo2ES5/tree/master/examples)
 
 ### controls
-- `mongoReadCapacity` - Max docs read per second (default: `10000`).
+- `mongodbReadCapacity` - Max docs read per second (default: `10000`).
 - `elasticsearchBulkSize` - Max bluk size per request (default: `5000`).
 - `tailFromTime` - If set, program start to tail oplog with query: `{ ts: { $gte: new Timestamp(new Date(tailFromTime).getTime(), 0) } }`, without scan entire database. (optional)
 
-### mongo
+### mongodb
 - `url` - The connection URI string, eg: `mongodb://user:password@localhost:27017/db?replicaSet=rs0`.
 **notice**: `'db'` in url will be ignored.
 **notice**: must use a `admin` user to access oplog.
@@ -66,8 +66,8 @@ Structure:
 
 
 ### task.transform
-- `mapping` - The field mapping from mongo's collection to elasticsearch's index.
-- `parent` - The field in mongo's collection to use as the `_parent` in elasticsearch's index. (optional)
+- `mapping` - The field mapping from mongodb's collection to elasticsearch's index.
+- `parent` - The field in mongodb's collection to use as the `_parent` in elasticsearch's index. (optional)
 
 ### task.load
 - `index` - The name of the index.

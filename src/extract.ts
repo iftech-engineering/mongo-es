@@ -3,7 +3,7 @@ import { Timestamp } from 'bson'
 import { Observable } from 'rx'
 import { mapValues } from 'lodash'
 import { ExtractTask } from './types'
-import { mongo, elasticsearch } from './models'
+import { mongodb, elasticsearch } from './models'
 
 let consumedReadCapacity = 0
 
@@ -28,7 +28,7 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
 
 export function scan(task: ExtractTask, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
-    const db = mongo()[task.db]
+    const db = mongodb()[task.db]
     try {
       const stream = db.collection(task.collection)
         .find(task.query)
@@ -56,7 +56,7 @@ export function scan(task: ExtractTask, provisionedReadCapacity: number): Observ
 
 export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
-    const db = mongo()['local']
+    const db = mongodb()['local']
     try {
       const cursor = db.collection('oplog.rs')
         .find({
