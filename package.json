@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A MongoDB to Elasticsearch connector",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.js",
@@ -18,14 +18,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jike-engineering/Mongo-ES.git"
+    "url": "git+https://github.com/jike-engineering/mongo-es.git"
   },
   "author": "",
   "license": "MPL",
   "bugs": {
-    "url": "https://github.com/jike-engineering/Mongo-ES/issues"
+    "url": "https://github.com/jike-engineering/mongo-es/issues"
   },
-  "homepage": "https://github.com/jike-engineering/Mongo-ES#readme",
+  "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
     "bson": "^1.0.4",
     "elasticsearch": "^13.0.1",
