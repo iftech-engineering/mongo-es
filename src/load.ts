@@ -30,6 +30,9 @@ export async function exists(name: string): Promise<boolean> {
 }
 
 export async function bulk(task: LoadTask, IRs: IntermediateRepresentation[]): Promise<void> {
+  if (IRs.length === 0) {
+    return
+  }
   const body: any[] = []
   forEach(IRs, (IR) => {
     switch (IR.action) {
