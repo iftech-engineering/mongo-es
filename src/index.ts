@@ -67,7 +67,28 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
   })
 }
 
-async function start() {
+async function runTask(config: Config, task: Task, from: Date) {
+  if (!config.controls.tailFromTime) {
+    try {
+      console.log('scan', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
+        '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
+      await scanDocument(config.controls, task)
+      console.log('scan', 'end')
+    } catch (err) {
+      console.error('scan', err)
+    }
+  }
+  try {
+    console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
+      '->', `Elasticsearch: ${task.load.index}.${task.load.type}`, 'from', from)
+    await tailOpLog(config.controls, task, from)
+    console.error('tail', 'should not end')
+  } catch (err) {
+    console.error('tail', err)
+  }
+}
+
+(async function run() {
   try {
     const config = await readConfig(process.argv[2])
     await init(config)
@@ -75,7 +96,7 @@ async function start() {
       ? new Date(config.controls.tailFromTime)
       : new Date()
 
-    if (config.elasticsearch.index && ! await exists(config.elasticsearch.index.index)) {
+    if (config.elasticsearch.index && !await exists(config.elasticsearch.index.index)) {
       await create(config.elasticsearch.index)
       console.log('create index', config.elasticsearch.index.index)
       for (let task of config.tasks) {
@@ -84,31 +105,12 @@ async function start() {
       }
     }
 
-    forEach(config.tasks, async (task) => {
-      if (!config.controls.tailFromTime) {
-        try {
-          console.log('scan', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
-            '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
-          await scanDocument(config.controls, task)
-          console.log('scan', 'end')
-        } catch (err) {
-          console.error('scan', err)
-        }
-      }
-      try {
-        console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
-          '->', `Elasticsearch: ${task.load.index}.${task.load.type}`, 'from', from)
-        await tailOpLog(config.controls, task, from)
-        console.error('tail', 'should not end')
-      } catch (err) {
-        console.error('tail', err)
-      }
+    forEach(config.tasks, (task) => {
+      runTask(config, task, from)
     })
   } catch (err) {
     console.error('run', err)
   }
-}
+})()
 
 console.debug = process.env.NODE_ENV === 'dev' ? console.log : () => null
-
-start()
