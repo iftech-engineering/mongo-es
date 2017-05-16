@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A MongoDB to Elasticsearch connector",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.js",
@@ -31,15 +31,13 @@
     "lodash": "^4.17.4",
     "mongodb": "^2.2.26",
     "rx": "^4.1.0",
-    "source-map-support": "^0.4.15",
-    "yargs": "^8.0.1"
+    "source-map-support": "^0.4.15"
   },
   "devDependencies": {
     "@types/elasticsearch": "^5.0.13",
     "@types/lodash": "^4.14.64",
     "@types/mongodb": "^2.2.2",
     "@types/rx": "^4.1.1",
-    "@types/yargs": "^6.6.0",
     "ava": "^0.19.1",
     "typescript": "^2.3.2"
   }
