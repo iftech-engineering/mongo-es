@@ -53,7 +53,7 @@ Structure:
 
 ### elasticsearch
 - `options` - Elasticsearch Config Options, see: [Configuration](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/configuration.html).
-- `index` - If set, auto create index when program start, see: [Indeces Create](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference-5-0.html#api-indices-create-5-0). (optional)
+- `indices` - If set, auto create indices when program start, see: [Indeces Create](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference-5-0.html#api-indices-create-5-0). (optional)
 
 ### task.extract
 - `db` - Database name.

@@ -15,7 +15,7 @@ export type MongoConfig = {
 
 export type ElasticsearchConfig = {
   options: ConfigOptions
-  index?: IndicesCreateParams
+  indices?: IndicesCreateParams[]
 }
 
 export type Task = {

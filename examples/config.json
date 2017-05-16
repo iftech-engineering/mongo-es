@@ -20,18 +20,20 @@
       "sniff_on_connection_fail": true,
       "sniffer_timeout": 60
     },
-    "index": {
-      "index": "index0",
-      "body": {
-        "settings": {
-          "index": {
-            "number_of_shards": 3,
-            "number_of_replicas": 1,
-            "mapper.dynamic": false
+    "indices": [
+      {
+        "index": "index0",
+        "body": {
+          "settings": {
+            "index": {
+              "number_of_shards": 3,
+              "number_of_replicas": 1,
+              "mapper.dynamic": false
+            }
           }
         }
       }
-    }
+    ]
   },
   "tasks": [
     {

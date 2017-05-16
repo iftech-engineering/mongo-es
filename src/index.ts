@@ -99,13 +99,16 @@ async function runTask(config: Config, task: Task, from: Date) {
       ? new Date(config.controls.tailFromTime)
       : new Date()
 
-    if (config.elasticsearch.index && !await exists(config.elasticsearch.index.index)) {
-      await create(config.elasticsearch.index)
-      console.log('create index', config.elasticsearch.index.index)
-      for (let task of config.tasks) {
-        await putMapping(task.load)
-        console.log('put mapping', task.load.type)
+    forEach(config.elasticsearch.indices || [], async (index) => {
+      if (!await exists(index.index)) {
+        await create(index)
+        console.log('create index', index.index)
       }
+    })
+
+    for (let task of config.tasks) {
+      await putMapping(task.load)
+      console.log('put mapping', task.load.type)
     }
 
     forEach(config.tasks, (task) => {
