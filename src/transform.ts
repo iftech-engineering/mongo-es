@@ -1,5 +1,5 @@
 import { forEach, size, get, set, unset, has, keys } from 'lodash'
-import { Task, Document, OpLog, IntermediateRepresentation, ObjectId } from './types'
+import { Task, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
 import { mongodb, elasticsearch } from './models'
 
 function transformer(task: Task, action: 'create' | 'update' | 'delete', doc: Document): IntermediateRepresentation | null {
@@ -45,7 +45,7 @@ function ignoreUpdate(task: Task, oplog: OpLog): boolean {
   return ignore
 }
 
-async function retrieveFromMongoDB(task: Task, id: ObjectId): Promise<Document | null> {
+async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document | null> {
   try {
     const doc = await mongodb()[task.extract.db].collection(task.extract.collection).findOne({
       _id: id,
@@ -58,7 +58,7 @@ async function retrieveFromMongoDB(task: Task, id: ObjectId): Promise<Document |
   }
 }
 
-async function searchFromElasticsearch(task: Task, id: ObjectId): Promise<Document | null> {
+async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
   return new Promise<Document | null>((resolve, reject) => {
     elasticsearch().search<Document>({
       index: task.load.index,
@@ -79,13 +79,13 @@ async function searchFromElasticsearch(task: Task, id: ObjectId): Promise<Docume
       console.debug('searchFromElasticsearch', response)
       resolve(response.hits.total > 0 ? {
         ...response.hits.hits[0]._source,
-        _id: ObjectId.createFromHexString(response.hits.hits[0]._id)
+        _id: new ObjectID(response.hits.hits[0]._id)
       } : null)
     })
   })
 }
 
-async function retrieveFromElasticsearch(task: Task, id: ObjectId): Promise<Document | null> {
+async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
   return new Promise<Document | null>((resolve, reject) => {
     elasticsearch().get<Document>({
       index: task.load.index as string,
@@ -100,7 +100,7 @@ async function retrieveFromElasticsearch(task: Task, id: ObjectId): Promise<Docu
       console.debug('retrieveFromElasticsearch', response)
       resolve(response ? {
         ...response._source,
-        _id: ObjectId.createFromHexString(response._id)
+        _id: new ObjectID(response._id)
       } : null)
     })
   })
