@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A MongoDB to Elasticsearch connector",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.js",

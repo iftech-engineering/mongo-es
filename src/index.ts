@@ -39,7 +39,7 @@ async function scanDocument(controls: Controls, task: Task): Promise<void> {
 }
 
 async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<never> {
-  return new Promise<never>((resolve, reject) => {
+  return new Promise<never>((resolve) => {
     tail(task.extract, from, controls.mongodbReadCapacity || 10000)
       .bufferWithTimeOrCount(1000, 50)
       .flatMap((logs) => {
@@ -63,7 +63,15 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
         } catch (err) {
           console.warn('tail', err.message)
         }
-      }, reject, resolve)
+      }, (err) => {
+        const oneMinuteAgo = new Date()
+        oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1)
+        console.error('tail', err)
+        return tailOpLog(controls, task, oneMinuteAgo)
+      }, () => {
+        console.error('tail', 'should not complete')
+        resolve()
+      })
   })
 }
 
@@ -78,14 +86,9 @@ async function runTask(config: Config, task: Task, from: Date) {
       console.error('scan', err)
     }
   }
-  try {
-    console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
-      '->', `Elasticsearch: ${task.load.index}.${task.load.type}`, 'from', from)
-    await tailOpLog(config.controls, task, from)
-    console.error('tail', 'should not end')
-  } catch (err) {
-    console.error('tail', err)
-  }
+  console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
+    '->', `Elasticsearch: ${task.load.index}.${task.load.type}`, 'from', from)
+  await tailOpLog(config.controls, task, from)
 }
 
 (async function run() {
