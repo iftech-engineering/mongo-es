@@ -28,6 +28,7 @@ export type Controls = {
   tailFromTime?: number | string
   mongodbReadCapacity?: number
   elasticsearchBulkSize?: number
+  indexNameSuffix?: string
 }
 
 export type ExtractTask = {

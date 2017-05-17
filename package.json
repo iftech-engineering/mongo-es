@@ -1,14 +1,12 @@
 {
   "name": "mongo-es",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A MongoDB to Elasticsearch connector",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.js",
+  "main": "./dist/src/index.js",
   "scripts": {
     "start": "node ./dist/src/index.js",
     "build": "rm -rf ./dist && tsc",
-    "dev": "tsc -w & NODE_ENV=dev nodemon ./dist/src/index.js",
-    "test": "rm -rf ./dist && tsc && NODE_ENV=dev ava ./dist/test/*"
+    "dev": "tsc -w & NODE_ENV=dev nodemon ./dist/src/index.js"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.com"
@@ -38,7 +36,7 @@
     "@types/lodash": "^4.14.64",
     "@types/mongodb": "^2.2.2",
     "@types/rx": "^4.1.1",
-    "ava": "^0.19.1",
+    "nodemon": "^1.11.0",
     "typescript": "^2.3.2"
   }
 }

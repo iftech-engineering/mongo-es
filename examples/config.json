@@ -2,7 +2,8 @@
   "controls": {
     "mongodbReadCapacity": 10000,
     "elasticsearchBulkSize": 5000,
-    "tailFromTime": "2017-05-12T07:47:16.030Z"
+    "tailFromTime": "2017-05-12T07:47:16.030Z",
+    "indexNameSuffix": "_v1"
   },
   "mongodb": {
     "url": "mongodb://user:password@localhost:27017/db?replicaSet=rs0",
