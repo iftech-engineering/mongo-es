@@ -100,15 +100,15 @@ async function runTask(config: Config, task: Task, from: Date) {
     const from = config.controls.tailFromTime
       ? new Date(config.controls.tailFromTime)
       : new Date()
-
     console.log('run', from)
-    forEach(config.elasticsearch.indices || [], async (index) => {
+
+    for (let index of config.elasticsearch.indices || []) {
       index.index += config.controls.indexNameSuffix || ''
       if (!await exists(index.index)) {
         await create(index)
         console.log('create index', index.index)
       }
-    })
+    }
 
     for (let task of config.tasks) {
       task.load.index += config.controls.indexNameSuffix || ''
