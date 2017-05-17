@@ -28,7 +28,7 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
 
 export function scan(task: ExtractTask, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
-    const db = mongodb()[task.db]
+    const db = mongodb(task)
     try {
       const stream = db.collection(task.collection)
         .find(task.query)
@@ -55,7 +55,7 @@ export function scan(task: ExtractTask, provisionedReadCapacity: number): Observ
 
 export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: number): Observable<any> {
   return Observable.create(async (observer) => {
-    const db = mongodb()['local']
+    const db = mongodb('local')
     try {
       const cursor = db.collection('oplog.rs')
         .find({
