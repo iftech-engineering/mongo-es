@@ -112,7 +112,7 @@ async function runTask(config: Config, task: Task, from: Date) {
     for (let task of config.tasks) {
       task.load.index += config.controls.indexNameSuffix || ''
       await putMapping(task.load)
-      console.log('put mapping', task.load.type)
+      console.log('put mapping', task.load.index, task.load.type)
     }
 
     forEach(config.tasks, (task) => {

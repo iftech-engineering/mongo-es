@@ -48,7 +48,7 @@ function ignoreUpdate(task: Task, oplog: OpLog): boolean {
 
 async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document | null> {
   try {
-    const doc = await mongodb(task.extract).collection(task.extract.collection).findOne({
+    const doc = await mongodb()[task.extract.db].collection(task.extract.collection).findOne({
       _id: id,
     })
     console.debug('retrieve from mongodb', doc)
