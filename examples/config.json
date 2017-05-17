@@ -19,7 +19,8 @@
       "apiVersion": "5.0",
       "sniff_on_start": true,
       "sniff_on_connection_fail": true,
-      "sniffer_timeout": 60
+      "sniffer_timeout": 60,
+      "maxSockets": 20
     },
     "indices": [
       {

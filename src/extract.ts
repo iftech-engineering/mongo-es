@@ -61,7 +61,7 @@ export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: num
         .find({
           ns: `${task.db}.${task.collection}`,
           ts: {
-            $gte: new Timestamp(from.getTime(), 0),
+            $gte: new Timestamp(0, from.getTime() / 1000),
           },
           fromMigrate: {
             $exists: false,
