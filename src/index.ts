@@ -11,6 +11,7 @@ import { document, oplog } from './transform'
 import { bulk, exists, putMapping, create } from './load'
 import { Task, Config, Controls, IntermediateRepresentation } from './types'
 import { init } from './models'
+import { taskName } from './utils'
 
 async function readConfig(path: string): Promise<Config> {
   return new Promise<Config>((resolve, reject) => {
@@ -30,9 +31,9 @@ async function scanDocument(controls: Controls, task: Task): Promise<void> {
         }
         try {
           await bulk(task.load, compact<any>(map(docs, doc => document(task, doc))))
-          console.log('scan', docs.length)
+          console.log('scan', taskName(task), docs.length)
         } catch (err) {
-          console.warn('scan', err.message)
+          console.warn('scan', taskName(task), err.message)
         }
       }, reject, resolve)
   })
@@ -59,17 +60,17 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
         }
         try {
           await bulk(task.load, docs)
-          console.log('tail', docs.length)
+          console.log('tail', taskName(task), docs.length)
         } catch (err) {
-          console.warn('tail', err.message)
+          console.warn('tail', taskName(task), err.message)
         }
       }, (err) => {
         const oneMinuteAgo = new Date()
         oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1)
-        console.error('tail', err)
+        console.error('tail', taskName(task), err)
         return tailOpLog(controls, task, oneMinuteAgo)
       }, () => {
-        console.error('tail', 'should not complete')
+        console.error('tail', taskName(task), 'should not complete')
         resolve()
       })
   })
@@ -78,16 +79,14 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
 async function runTask(config: Config, task: Task, from: Date) {
   if (!config.controls.tailFromTime) {
     try {
-      console.log('scan', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
-        '->', `Elasticsearch: ${task.load.index}.${task.load.type}`)
+      console.log('scan', taskName(task), 'start')
       await scanDocument(config.controls, task)
-      console.log('scan', 'end')
+      console.log('scan', taskName(task), 'end')
     } catch (err) {
       console.error('scan', err)
     }
   }
-  console.log('tail', 'start', `Mongo: ${task.extract.db}.${task.extract.collection}`,
-    '->', `Elasticsearch: ${task.load.index}.${task.load.type}`, 'from', from)
+  console.log('tail', taskName(task), 'start', 'from', from)
   await tailOpLog(config.controls, task, from)
 }
 

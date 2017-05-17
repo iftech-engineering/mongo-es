@@ -1,6 +1,7 @@
 import { forEach, size, get, set, unset, has, keys } from 'lodash'
 import { Task, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
 import { mongodb, elasticsearch } from './models'
+import { taskName } from './utils'
 
 function transformer(task: Task, action: 'create' | 'update' | 'delete', doc: Document): IntermediateRepresentation | null {
   const IR: IntermediateRepresentation = {
@@ -50,10 +51,10 @@ async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document |
     const doc = await mongodb()[task.extract.db].collection(task.extract.collection).findOne({
       _id: id,
     })
-    console.debug('retrieveFromMongoDB', doc)
+    console.debug('retrieve from mongodb', doc)
     return doc
   } catch (err) {
-    console.warn('retrieveFromMongoDB', id, err.message)
+    console.warn('retrieve from mongodb', taskName(task), id, err.message)
     return null
   }
 }
@@ -72,11 +73,11 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
       },
     }, (err, response) => {
       if (err) {
-        console.warn('searchFromElasticsearch', id, err.message)
+        console.warn('search from elasticsearch', taskName(task), id, err.message)
         resolve(null)
         return
       }
-      console.debug('searchFromElasticsearch', response)
+      console.debug('search from elasticsearch', response)
       resolve(response.hits.total > 0 ? {
         ...response.hits.hits[0]._source,
         _id: new ObjectID(response.hits.hits[0]._id)
@@ -93,11 +94,11 @@ async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Docu
       id: id.toHexString(),
     }, (err, response) => {
       if (err) {
-        console.warn('retrieveFromElasticsearch', id, err.message)
+        console.warn('retrieve from elasticsearch', taskName(task), id, err.message)
         resolve(null)
         return
       }
-      console.debug('retrieveFromElasticsearch', response)
+      console.debug('retrieve from elasticsearch', response)
       resolve(response ? {
         ...response._source,
         _id: new ObjectID(response._id)
