@@ -44,7 +44,7 @@ export type ExtractTask = {
 }
 
 export type TransformTask = {
-  parent: string
+  parent?: string
   mapping: {
     [key: string]: string
   }
@@ -59,10 +59,11 @@ export type Document = {
 
 export type OpLog = {
   ts: Timestamp
+  t: number
   h: number
   v: number
   ns: string
-  fromMigrate: boolean
+  fromMigrate?: boolean
 } & (
     {
       op: 'i'
@@ -73,8 +74,8 @@ export type OpLog = {
     } | {
       op: 'u'
       o: {
-        $set: any
-        $unset: any
+        $set?: any
+        $unset?: any
         [key: string]: any
       }
       o2: {
