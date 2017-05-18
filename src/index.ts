@@ -50,13 +50,13 @@ async function tailOpLog(controls: Controls, task: Task, index: number, from: Da
     tail(task.extract, from)
       .bufferWithTimeOrCount(1000, 50)
       .flatMap((logs) => {
-        return Observable.create<IntermediateRepresentation>((observer) => {
-          forEach(logs, async (log) => {
+        return Observable.create<IntermediateRepresentation>(async (observer) => {
+          for (let log of logs) {
             const doc = await oplog(task, log)
             if (doc) {
               observer.onNext(doc)
             }
-          })
+          }
         })
       })
       .bufferWithTimeOrCount(1000, controls.elasticsearchBulkSize || defaults.elasticsearchBulkSize)
