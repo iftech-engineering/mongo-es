@@ -16,10 +16,7 @@
   "elasticsearch": {
     "options": {
       "host": "http://localhost:9200",
-      "apiVersion": "5.0",
-      "sniffOnStart": true,
-      "sniffOnConnectionFault": true,
-      "sniffInterval": 60
+      "apiVersion": "5.2"
     },
     "indices": [
       {
