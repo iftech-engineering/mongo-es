@@ -51,7 +51,7 @@ export function scan(task: ExtractTask, provisionedReadCapacity: number): Observ
   })
 }
 
-export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: number): Observable<any> {
+export function tail(task: ExtractTask, from: Date): Observable<any> {
   return Observable.create(async (observer) => {
     const db = mongodb()['local']
     try {

@@ -41,7 +41,7 @@ async function scanDocument(controls: Controls, task: Task): Promise<void> {
 
 async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<never> {
   return new Promise<never>((resolve) => {
-    tail(task.extract, from, controls.mongodbReadCapacity || 10000)
+    tail(task.extract, from)
       .bufferWithTimeOrCount(1000, 50)
       .flatMap((logs) => {
         return Observable.create<IntermediateRepresentation>((observer) => {
