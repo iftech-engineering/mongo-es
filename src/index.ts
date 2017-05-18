@@ -4,7 +4,7 @@ import 'source-map-support/register'
 import { parse, format } from 'url'
 import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
-import { forEach, map, compact } from 'lodash'
+import { forEach, map, compact, isNil } from 'lodash'
 import { Observable } from 'rx'
 import { scan, tail } from './extract'
 import { document, oplog } from './transform'
@@ -83,17 +83,18 @@ async function tailOpLog(controls: Controls, task: Task, index: number, from: Da
 }
 
 async function runTask(config: Config, task: Task, index: number) {
+  const from = isNil(task.from.time) ? new Date() : new Date(task.from.time)
   if (task.from.phase === 'scan') {
     try {
-      console.log('scan', taskName(task), 'start')
+      console.log('scan', taskName(task), 'start', 'from', task.from.id || defaults.maxID)
       await scanDocument(config.controls, task, index, new ObjectID(task.from.id || defaults.maxID))
       console.log('scan', taskName(task), 'end')
     } catch (err) {
       console.error('scan', err)
     }
   }
-  console.log('tail', taskName(task), 'start')
-  await tailOpLog(config.controls, task, index, new Date(task.from.time))
+  console.log('tail', taskName(task), 'start', 'from', from)
+  await tailOpLog(config.controls, task, index, from)
 }
 
 (async function run() {

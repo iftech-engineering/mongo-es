@@ -33,7 +33,7 @@ export type Controls = {
 
 export type CheckPoint = {
   phase: 'scan' | 'tail'
-  time: string | number
+  time?: string | number
   id?: string
 }
 
