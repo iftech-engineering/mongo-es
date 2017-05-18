@@ -43,7 +43,6 @@ Structure:
 ### controls
 - `mongodbReadCapacity` - Max docs read per second (default: `10000`).
 - `elasticsearchBulkSize` - Max bluk size per request (default: `5000`).
-- `tailFromTime` - If set, program start to tail oplog with query: `{ ts: { $gte: new Timestamp(new Date(tailFromTime).getTime(), 0) } }`, without scan entire database. (optional)
 
 ### mongodb
 - `url` - The connection URI string, eg: `mongodb://user:password@localhost:27017/db?replicaSet=rs0`.
@@ -55,6 +54,11 @@ Structure:
 - `options` - Elasticsearch Config Options, see: [Configuration](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/configuration.html).
 - `indices` - If set, auto create indices when program start, see: [Indeces Create](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference-5-0.html#api-indices-create-5-0). (optional)
 
+### task.from
+- `phase` - `scan` or `tail`
+- `from` - tail oplog with query: `{ ts: { $gte: new Timestamp(0, new Date(tailFromTime).getTime()) } }`
+- `id` - scan collection with query `{ _id: { $lte: id }}`
+
 ### task.extract
 - `db` - Database name.
 - `collection` - Collection name in database.
@@ -62,7 +66,6 @@ Structure:
 **notice**: not work in [Tail phase](https://github.com/jike-engineering/mongo-es#tail-phase).
 - `projection` - Projection selector, see [Projection](https://docs.mongodb.com/manual/reference/operator/projection/).
 **notice**: works in [Tail phase](https://github.com/jike-engineering/mongo-es#tail-phase).
-- `sort` Sort order of the result set. **recommend**: `{ "$natural": -1 }`, new documents first, see [Sort](https://docs.mongodb.com/manual/reference/method/cursor.sort/).
 
 ### task.transform
 - `mapping` - The field mapping from mongodb's collection to elasticsearch's index.

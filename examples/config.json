@@ -2,14 +2,12 @@
   "controls": {
     "mongodbReadCapacity": 10000,
     "elasticsearchBulkSize": 5000,
-    "tailFromTime": "2017-05-12T07:47:16.030Z",
     "indexNameSuffix": "_v1"
   },
   "mongodb": {
     "url": "mongodb://user:password@localhost:27017/db?replicaSet=rs0",
     "options": {
       "authSource": "admin",
-      "poolSize": 3,
       "readPreference": "secondaryPreferred"
     }
   },
@@ -35,6 +33,10 @@
   },
   "tasks": [
     {
+      "from": {
+        "phase": "scan",
+        "time": 0
+      },
       "extract": {
         "db": "db0",
         "collection": "collection0",
@@ -47,9 +49,6 @@
           "field0": 1,
           "field1": 1,
           "field2": 1
-        },
-        "sort": {
-          "$natural": -1
         }
       },
       "transform": {
@@ -82,15 +81,16 @@
       }
     },
     {
+      "from": {
+        "phase": "tail",
+        "time": "2017-05-12T07:47:16.030Z"
+      },
       "extract": {
         "db": "db0",
         "collection": "collection1",
         "query": {},
         "projection": {
           "field3": 1
-        },
-        "sort": {
-          "$natural": 1
         }
       },
       "transform": {

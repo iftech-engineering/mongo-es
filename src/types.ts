@@ -19,16 +19,22 @@ export type ElasticsearchConfig = {
 }
 
 export type Task = {
+  from: CheckPoint
   extract: ExtractTask
   transform: TransformTask
   load: LoadTask
 }
 
 export type Controls = {
-  tailFromTime?: number | string
   mongodbReadCapacity?: number
   elasticsearchBulkSize?: number
   indexNameSuffix?: string
+}
+
+export type CheckPoint = {
+  phase: 'scan' | 'tail'
+  time: string | number
+  id?: string
 }
 
 export type ExtractTask = {
@@ -37,9 +43,6 @@ export type ExtractTask = {
   query: any
   projection: {
     [key: string]: 1 | 0
-  }
-  sort: {
-    [key: string]: 1 | -1
   }
 }
 

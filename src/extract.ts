@@ -2,7 +2,7 @@ import { Readable } from 'stream'
 import { Timestamp } from 'bson'
 import { Observable } from 'rx'
 import { mapValues } from 'lodash'
-import { ExtractTask } from './types'
+import { ExtractTask, ObjectID, Document, OpLog } from './types'
 import { mongodb, elasticsearch } from './models'
 
 let consumedReadCapacity = 0
@@ -26,17 +26,24 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
   })
 }
 
-export function scan(task: ExtractTask, provisionedReadCapacity: number): Observable<any> {
-  return Observable.create(async (observer) => {
+export function scan(task: ExtractTask, id: ObjectID, provisionedReadCapacity: number): Observable<Document> {
+  return Observable.create<Document>((observer) => {
     const db = mongodb()[task.db]
     try {
       const stream = db.collection(task.collection)
-        .find(task.query)
+        .find({
+          ...task.query,
+          _id: {
+            $lte: id,
+          },
+        })
         .project(task.projection)
-        .sort(task.sort)
+        .sort({
+          $natural: -1,
+        })
         .stream()
       controlReadCapacity(stream, provisionedReadCapacity)
-      stream.on('data', (doc) => {
+      stream.on('data', (doc: Document) => {
         observer.onNext(doc)
       })
       stream.on('error', (err) => {
@@ -51,8 +58,8 @@ export function scan(task: ExtractTask, provisionedReadCapacity: number): Observ
   })
 }
 
-export function tail(task: ExtractTask, from: Date): Observable<any> {
-  return Observable.create(async (observer) => {
+export function tail(task: ExtractTask, from: Date): Observable<OpLog> {
+  return Observable.create<OpLog>((observer) => {
     const db = mongodb()['local']
     try {
       const cursor = db.collection('oplog.rs')
