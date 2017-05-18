@@ -17,10 +17,9 @@
     "options": {
       "host": "http://localhost:9200",
       "apiVersion": "5.0",
-      "sniff_on_start": true,
-      "sniff_on_connection_fail": true,
-      "sniffer_timeout": 60,
-      "maxSockets": 20
+      "sniffOnStart": true,
+      "sniffOnConnectionFault": true,
+      "sniffInterval": 60
     },
     "indices": [
       {
