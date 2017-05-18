@@ -41,14 +41,12 @@ export function scan(task: ExtractTask, provisionedReadCapacity: number): Observ
       })
       stream.on('error', (err) => {
         observer.onError(err)
-        db.close()
       })
       stream.on('end', () => {
         observer.onCompleted()
       })
     } catch (err) {
       observer.onError(err)
-      db.close()
     }
   })
 }
@@ -79,7 +77,6 @@ export function tail(task: ExtractTask, from: Date, provisionedReadCapacity: num
       })
     } catch (err) {
       observer.onError(err)
-      db.close()
     }
   })
 }
