@@ -105,4 +105,4 @@ export type MongoDB = {
 
 export type Elasticsearch = Client
 
-export { ObjectID }
+export { ObjectID, Timestamp }

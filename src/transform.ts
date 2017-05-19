@@ -71,17 +71,23 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
           },
         },
       },
-    }, (err, response) => {
+    }, (err, response: any) => {
       if (err) {
         console.warn('search from elasticsearch', taskName(task), id, err.message)
         resolve(null)
         return
       }
       console.debug('search from elasticsearch', response)
-      resolve(response.hits.total > 0 ? {
-        ...response.hits.hits[0]._source,
-        _id: new ObjectID(response.hits.hits[0]._id)
-      } : null)
+      if (response.hits.total === 0) {
+        resolve(null)
+        return
+      }
+      const doc = response.hits.hits[0]._source
+      doc._id = new ObjectID(response.hits.hits[0]._id)
+      if (task.transform.parent && response.hits.hits[0]._parent) {
+        doc[task.transform.parent] = new ObjectID(response.hits.hits[0]._parent)
+      }
+      resolve(doc)
     })
   })
 }

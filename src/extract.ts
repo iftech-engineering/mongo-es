@@ -1,8 +1,7 @@
 import { Readable } from 'stream'
-import { Timestamp } from 'bson'
 import { Observable } from 'rx'
 import { mapValues } from 'lodash'
-import { ExtractTask, ObjectID, Document, OpLog } from './types'
+import { ExtractTask, ObjectID, Document, OpLog, Timestamp } from './types'
 import { mongodb, elasticsearch } from './models'
 
 let consumedReadCapacity = 0
