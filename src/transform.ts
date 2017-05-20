@@ -150,7 +150,7 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
           return null
         }
         const doc = task.transform.parent
-          ? await retrieveFromElasticsearch(task, oplog.o._id)
+          ? await searchFromElasticsearch(task, oplog.o._id)
           : oplog.o
         console.debug(doc)
         return doc ? transformer(task.transform, 'delete', doc) : null
