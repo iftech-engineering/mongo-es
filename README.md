@@ -1,6 +1,8 @@
 # Mongo-ES
 A MongoDB to Elasticsearch connector
 
+[![npm version](https://badge.fury.io/js/mongo-es.svg)](https://badge.fury.io/js/mongo-es)
+
 ## Installation
 ```bash
 npm i -g mongo-es
@@ -41,8 +43,9 @@ Structure:
 [Detail example](https://github.com/jike-engineering/mongo-es/blob/master/examples/config.json)
 
 ### controls
-- `mongodbReadCapacity` - Max docs read per second (default: `10000`).
-- `elasticsearchBulkSize` - Max bluk size per request (default: `5000`).
+- `mongodbReadCapacity` - Max docs read per second (default: `10000`). (optional)
+- `elasticsearchBulkSize` - Max bluk size per request (default: `5000`). (optional)
+- `indexNameSuffix` - Index name suffix, for index version control. (optional)
 
 ### mongodb
 - `url` - The connection URI string, eg: `mongodb://user:password@localhost:27017/db?replicaSet=rs0`.
