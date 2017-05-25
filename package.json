@@ -28,7 +28,7 @@
   "dependencies": {
     "elasticsearch": "^13.0.1",
     "lodash": "^4.17.4",
-    "mongodb": "^2.2.26",
+    "mongodb": "^2.2.27",
     "rx": "^4.1.0",
     "source-map-support": "^0.4.15"
   },
@@ -39,6 +39,6 @@
     "@types/rx": "^4.1.1",
     "ava": "^0.19.1",
     "nodemon": "^1.11.0",
-    "typescript": "^2.3.2"
+    "typescript": "^2.3.3"
   }
 }
