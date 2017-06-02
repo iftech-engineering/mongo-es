@@ -1,4 +1,5 @@
 import { forEach, size, get, set, unset, has, keys } from 'lodash'
+
 import { Task, TransformTask, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
 import { mongodb, elasticsearch } from './models'
 import { taskName } from './utils'

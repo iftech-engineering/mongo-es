@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 import 'source-map-support/register'
+
 import { parse, format } from 'url'
 import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
 import { forEach, map, compact, isNil } from 'lodash'
 import { Observable } from 'rx'
+
 import { scan, tail } from './extract'
 import { document, oplog } from './transform'
 import { bulk, exists, putMapping, create } from './load'

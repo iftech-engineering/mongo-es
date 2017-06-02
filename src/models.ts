@@ -1,6 +1,7 @@
 import { parse, format } from 'url'
 import { MongoClient, Collection } from 'mongodb'
 import { Client } from 'elasticsearch'
+
 import { Config, MongoDB, Elasticsearch } from './types'
 
 let _mongodb: MongoDB

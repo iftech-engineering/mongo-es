@@ -1,7 +1,8 @@
 import { forEach } from 'lodash'
+import { IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
+
 import { IntermediateRepresentation, LoadTask } from './types'
 import { elasticsearch } from './models'
-import { IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
 
 export async function create(params: IndicesCreateParams): Promise<void> {
   return new Promise<void>((resolve, reject) => {
