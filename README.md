@@ -59,7 +59,7 @@ Structure:
 
 ### task.from
 - `phase` - `scan` or `tail`
-- `from` - tail oplog with query: `{ ts: { $gte: new Timestamp(0, new Date(tailFromTime).getTime()) } }`
+- `time` - tail oplog with query: `{ ts: { $gte: new Timestamp(0, new Date(time).getTime()) } }`
 - `id` - scan collection with query `{ _id: { $lte: id }}`
 
 ### task.extract
