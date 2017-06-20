@@ -5,6 +5,7 @@
     "rootDir": "./",
     "module": "commonjs",
     "sourceMap": true,
+    "declaration": true,
     "target": "es6",
     "strictNullChecks": true,
     "noImplicitAny": true,
