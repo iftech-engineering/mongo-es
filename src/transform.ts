@@ -61,7 +61,7 @@ async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document |
 }
 
 async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
-  return new Promise<Document | null>((resolve, reject) => {
+  return new Promise<Document | null>((resolve) => {
     elasticsearch().search<Document>({
       index: task.load.index,
       type: task.load.type,
@@ -94,7 +94,7 @@ async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Docume
 }
 
 async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
-  return new Promise<Document | null>((resolve, reject) => {
+  return new Promise<Document | null>((resolve) => {
     elasticsearch().get<Document>({
       index: task.load.index as string,
       type: task.load.type,

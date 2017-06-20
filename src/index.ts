@@ -2,7 +2,6 @@
 
 import 'source-map-support/register'
 
-import { parse, format } from 'url'
 import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
 import { forEach, map, compact, isNil } from 'lodash'
@@ -29,7 +28,7 @@ async function readConfig(path: string): Promise<Config> {
   })
 }
 
-async function scanDocument(controls: Controls, task: Task, index: number, id: ObjectID): Promise<void> {
+async function scanDocument(controls: Controls, task: Task, id: ObjectID): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     scan(task.extract, id, controls.mongodbReadCapacity || defaults.mongodbReadCapacity)
       .bufferWithTimeOrCount(1000, controls.elasticsearchBulkSize || defaults.elasticsearchBulkSize)
@@ -47,7 +46,7 @@ async function scanDocument(controls: Controls, task: Task, index: number, id: O
   })
 }
 
-async function tailOpLog(controls: Controls, task: Task, index: number, from: Date): Promise<never> {
+async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<never> {
   return new Promise<never>((resolve) => {
     tail(task.extract, from)
       .bufferWithTimeOrCount(1000, 50)
@@ -76,7 +75,7 @@ async function tailOpLog(controls: Controls, task: Task, index: number, from: Da
         const oneMinuteAgo = new Date()
         oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1)
         console.error('tail', taskName(task), err)
-        return tailOpLog(controls, task, index, oneMinuteAgo)
+        return tailOpLog(controls, task, oneMinuteAgo)
       }, () => {
         console.error('tail', taskName(task), 'should not complete')
         resolve()
@@ -84,19 +83,19 @@ async function tailOpLog(controls: Controls, task: Task, index: number, from: Da
   })
 }
 
-async function runTask(config: Config, task: Task, index: number) {
+async function runTask(config: Config, task: Task) {
   const from = isNil(task.from.time) ? new Date() : new Date(task.from.time)
   if (task.from.phase === 'scan') {
     try {
       console.log('scan', taskName(task), 'start', 'from', task.from.id || defaults.maxID)
-      await scanDocument(config.controls, task, index, new ObjectID(task.from.id || defaults.maxID))
+      await scanDocument(config.controls, task, new ObjectID(task.from.id || defaults.maxID))
       console.log('scan', taskName(task), 'end')
     } catch (err) {
       console.error('scan', err)
     }
   }
   console.log('tail', taskName(task), 'start', 'from', from)
-  await tailOpLog(config.controls, task, index, from)
+  await tailOpLog(config.controls, task, from)
 }
 
 (async function run() {
@@ -122,8 +121,8 @@ async function runTask(config: Config, task: Task, index: number) {
       console.log('put mapping', task.load.index, task.load.type)
     }
 
-    forEach(config.tasks, (task, index) => {
-      runTask(config, task, index)
+    forEach(config.tasks, async (task) => {
+      await runTask(config, task)
     })
   } catch (err) {
     console.error('run', err)

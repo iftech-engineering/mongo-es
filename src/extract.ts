@@ -1,9 +1,8 @@
 import { Readable } from 'stream'
 import { Observable } from 'rx'
-import { mapValues } from 'lodash'
 
 import { ExtractTask, ObjectID, Document, OpLog, Timestamp } from './types'
-import { mongodb, elasticsearch } from './models'
+import { mongodb } from './models'
 
 let consumedReadCapacity = 0
 
@@ -15,7 +14,7 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
     consumedReadCapacity = 0
     stream.resume()
   }, 1000)
-  stream.addListener('data', (doc) => {
+  stream.addListener('data', () => {
     consumedReadCapacity++
     if (consumedReadCapacity >= provisionedReadCapacity) {
       stream.pause()
