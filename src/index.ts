@@ -1,5 +1,3 @@
-import 'source-map-support/register'
-
 import { forEach, map, compact, isNil } from 'lodash'
 import { Observable } from 'rx'
 

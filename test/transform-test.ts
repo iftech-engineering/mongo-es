@@ -1,3 +1,5 @@
+import 'source-map-support/register'
+
 import { ObjectID, Timestamp } from 'mongodb'
 import { OpLog, TransformTask, Document, IntermediateRepresentation } from '../src/types'
 import { transformer, applyUpdate, ignoreUpdate } from '../src/transform'
