@@ -2,7 +2,7 @@ import { Readable } from 'stream'
 import { Observable } from 'rx'
 
 import { ExtractTask, ObjectID, Document, OpLog, Timestamp } from './types'
-import { mongodb } from './models'
+import { MongoDB } from './models'
 
 let consumedReadCapacity = 0
 
@@ -27,9 +27,8 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
 
 export function scan(task: ExtractTask, id: ObjectID, provisionedReadCapacity: number): Observable<Document> {
   return Observable.create<Document>((observer) => {
-    const db = mongodb()[task.db]
     try {
-      const stream = db.collection(task.collection)
+      const stream = MongoDB.getCollection(task.db, task.collection)
         .find({
           ...task.query,
           _id: {
@@ -59,9 +58,8 @@ export function scan(task: ExtractTask, id: ObjectID, provisionedReadCapacity: n
 
 export function tail(task: ExtractTask, from: Date): Observable<OpLog> {
   return Observable.create<OpLog>((observer) => {
-    const db = mongodb()['local']
     try {
-      const cursor = db.collection('oplog.rs')
+      const cursor = MongoDB.getOplog()
         .find({
           ns: `${task.db}.${task.collection}`,
           ts: {

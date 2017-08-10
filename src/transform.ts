@@ -1,7 +1,7 @@
 import { forEach, size, get, set, unset, has, keys } from 'lodash'
 
 import { Task, TransformTask, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
-import { mongodb, elasticsearch } from './models'
+import { MongoDB, Elasticsearch } from './models'
 import { taskName } from './utils'
 
 export function transformer(task: TransformTask, action: 'create' | 'update' | 'delete', doc: Document): IntermediateRepresentation | null {
@@ -49,7 +49,7 @@ export function ignoreUpdate(task: TransformTask, oplog: OpLog): boolean {
 
 async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document | null> {
   try {
-    const doc = await mongodb()[task.extract.db].collection(task.extract.collection).findOne({
+    const doc = await MongoDB.getCollection(task.extract.db, task.extract.collection).findOne({
       _id: id,
     })
     console.debug('retrieve from mongodb', doc)
@@ -58,60 +58,6 @@ async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document |
     console.warn('retrieve from mongodb', taskName(task), id, err.message)
     return null
   }
-}
-
-async function searchFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
-  return new Promise<Document | null>((resolve) => {
-    elasticsearch().search<Document>({
-      index: task.load.index,
-      type: task.load.type,
-      body: {
-        query: {
-          term: {
-            _id: id.toHexString(),
-          },
-        },
-      },
-    }, (err, response: any) => {
-      if (err) {
-        console.warn('search from elasticsearch', taskName(task), id, err.message)
-        resolve(null)
-        return
-      }
-      console.debug('search from elasticsearch', response)
-      if (response.hits.total === 0) {
-        resolve(null)
-        return
-      }
-      const doc = response.hits.hits[0]._source
-      doc._id = new ObjectID(response.hits.hits[0]._id)
-      if (task.transform.parent && response.hits.hits[0]._parent) {
-        doc[task.transform.parent] = new ObjectID(response.hits.hits[0]._parent)
-      }
-      resolve(doc)
-    })
-  })
-}
-
-async function retrieveFromElasticsearch(task: Task, id: ObjectID): Promise<Document | null> {
-  return new Promise<Document | null>((resolve) => {
-    elasticsearch().get<Document>({
-      index: task.load.index as string,
-      type: task.load.type,
-      id: id.toHexString(),
-    }, (err, response) => {
-      if (err) {
-        console.warn('retrieve from elasticsearch', taskName(task), id, err.message)
-        resolve(null)
-        return
-      }
-      console.debug('retrieve from elasticsearch', response)
-      resolve(response ? {
-        ...response._source,
-        _id: new ObjectID(response._id)
-      } : null)
-    })
-  })
 }
 
 export function document(task: Task, doc: Document): IntermediateRepresentation | null {
@@ -140,8 +86,8 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
           })
         }
         const old = task.transform.parent
-          ? await searchFromElasticsearch(task, oplog.o2._id)
-          : await retrieveFromElasticsearch(task, oplog.o2._id)
+          ? await Elasticsearch.search(task, oplog.o2._id)
+          : await Elasticsearch.retrieve(task, oplog.o2._id)
         const doc = old ? applyUpdate(task.transform, old, oplog.o.$set, oplog.o.$unset) : await retrieveFromMongoDB(task, oplog.o2._id)
         return doc ? transformer(task.transform, 'update', doc) : null
       }
@@ -151,7 +97,7 @@ export async function oplog(task: Task, oplog: OpLog): Promise<IntermediateRepre
           return null
         }
         const doc = task.transform.parent
-          ? await searchFromElasticsearch(task, oplog.o._id)
+          ? await Elasticsearch.search(task, oplog.o._id)
           : oplog.o
         console.debug(doc)
         return doc ? transformer(task.transform, 'delete', doc) : null

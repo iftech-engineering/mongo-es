@@ -3,9 +3,9 @@ import { Observable } from 'rx'
 
 import { scan, tail } from './extract'
 import { document, oplog } from './transform'
-import { bulk, exists, putMapping, create } from './load'
+import { bulk } from './load'
 import { Task, Config, Controls, IntermediateRepresentation, ObjectID } from './types'
-import { init } from './models'
+import { MongoDB, Elasticsearch } from './models'
 import { taskName } from './utils'
 
 const defaults = {
@@ -87,13 +87,14 @@ async function runTask(config: Config, task: Task) {
 export async function run(config: Config) {
   console.debug(JSON.stringify(config, null, 2))
 
-  await init(config)
+  await MongoDB.init(config)
+  await Elasticsearch.init(config)
   console.log('run', new Date())
 
   for (let index of config.elasticsearch.indices || []) {
     index.index += config.controls.indexNameSuffix || ''
-    if (!await exists(index.index)) {
-      await create(index)
+    if (!await Elasticsearch.exists(index)) {
+      await Elasticsearch.create(index)
       console.log('create index', index.index)
     }
   }
@@ -101,7 +102,7 @@ export async function run(config: Config) {
   for (let index in config.tasks) {
     const task = config.tasks[index]
     task.load.index += config.controls.indexNameSuffix || ''
-    await putMapping(task.load)
+    await Elasticsearch.putMapping(task.load)
     console.log('put mapping', task.load.index, task.load.type)
   }
 
