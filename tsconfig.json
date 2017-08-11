@@ -8,7 +8,6 @@
     "declaration": true,
     "target": "es6",
     "strictNullChecks": true,
-    "noImplicitAny": true,
     "typeRoots": [
       "node_modules/@types"
     ]

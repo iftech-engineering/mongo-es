@@ -1,7 +1,8 @@
 import 'source-map-support/register'
 
 import { ObjectID, Timestamp } from 'mongodb'
-import { OpLog, TransformTask, Document, IntermediateRepresentation } from '../src/types'
+import { OpLog, Document, IntermediateRepresentation } from '../src/types'
+import { TransformTask } from '../src/models/Config'
 import { transformer, applyUpdate, ignoreUpdate } from '../src/transform'
 import test from 'ava'
 

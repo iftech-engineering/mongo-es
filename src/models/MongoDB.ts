@@ -2,7 +2,7 @@ import { parse, format } from 'url'
 
 import { Collection, Db, MongoClient } from 'mongodb'
 
-import { Config, Task } from '../types'
+import Config from './Config'
 
 export default class MongoDB {
   private static dbs: {

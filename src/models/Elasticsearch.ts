@@ -6,8 +6,9 @@ import {
   BulkIndexDocumentsParams,
 } from 'elasticsearch'
 
-import { Config, Task, ObjectID, Document } from '../types'
-import { taskName } from '../utils'
+import { ObjectID, Document } from '../types'
+import Config from './Config'
+import { Task } from './Config'
 
 
 export default class Elasticsearch {
@@ -69,12 +70,12 @@ export default class Elasticsearch {
         },
       }, (err, response: any) => {
         if (err) {
-          console.warn('search from elasticsearch', taskName(task), id, err.message)
+          console.warn('search from elasticsearch', task.name(), id, err.message)
           resolve(null)
           return
         }
         if (response.hits.total === 0) {
-          console.warn('search from elasticsearch', taskName(task), id, 'not found')
+          console.warn('search from elasticsearch', task.name(), id, 'not found')
           resolve(null)
           return
         }
@@ -97,7 +98,7 @@ export default class Elasticsearch {
         id: id.toHexString(),
       }, (err, response) => {
         if (err) {
-          console.warn('retrieve from elasticsearch', taskName(task), id, err.message)
+          console.warn('retrieve from elasticsearch', task.name(), id, err.message)
           resolve(null)
           return
         }

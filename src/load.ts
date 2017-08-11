@@ -1,7 +1,8 @@
 import { forEach } from 'lodash'
 
-import { IntermediateRepresentation, LoadTask } from './types'
+import { IntermediateRepresentation } from './types'
 import { Elasticsearch } from './models'
+import { LoadTask } from './models/Config'
 
 export async function bulk(task: LoadTask, IRs: IntermediateRepresentation[]): Promise<void> {
   if (IRs.length === 0) {

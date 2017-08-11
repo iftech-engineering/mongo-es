@@ -1,8 +1,9 @@
 import { Readable } from 'stream'
 import { Observable } from 'rx'
 
-import { ExtractTask, ObjectID, Document, OpLog, Timestamp } from './types'
+import { ObjectID, Document, OpLog, Timestamp } from './types'
 import { MongoDB } from './models'
+import { ExtractTask } from './models/Config'
 
 let consumedReadCapacity = 0
 

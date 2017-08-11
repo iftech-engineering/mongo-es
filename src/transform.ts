@@ -1,8 +1,8 @@
 import { forEach, size, get, set, unset, has, keys } from 'lodash'
 
-import { Task, TransformTask, Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
+import { Document, OpLog, IntermediateRepresentation, ObjectID } from './types'
 import { MongoDB, Elasticsearch } from './models'
-import { taskName } from './utils'
+import { TransformTask, Task } from './models/Config'
 
 export function transformer(task: TransformTask, action: 'create' | 'update' | 'delete', doc: Document): IntermediateRepresentation | null {
   const IR: IntermediateRepresentation = {
@@ -55,7 +55,7 @@ async function retrieveFromMongoDB(task: Task, id: ObjectID): Promise<Document |
     console.debug('retrieve from mongodb', doc)
     return doc
   } catch (err) {
-    console.warn('retrieve from mongodb', taskName(task), id, err.message)
+    console.warn('retrieve from mongodb', task.name(), id, err.message)
     return null
   }
 }
