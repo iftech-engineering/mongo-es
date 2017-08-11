@@ -23,8 +23,8 @@ export class ElasticsearchConfig {
 
 export class CheckPoint {
   phase: 'scan' | 'tail'
-  id?: ObjectID
-  time?: Date
+  id: ObjectID
+  time: Date
 
   constructor({ phase, id = 'FFFFFFFFFFFFFFFFFFFFFFFF', time = 0 }) {
     if (phase === 'scan') {

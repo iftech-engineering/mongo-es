@@ -1,9 +1,9 @@
 import { Readable } from 'stream'
 import { Observable } from 'rx'
 
-import { ObjectID, Document, OpLog, Timestamp } from './types'
+import { Document, OpLog, Timestamp } from './types'
 import { MongoDB } from './models'
-import { ExtractTask } from './models/Config'
+import { Task } from './models/Config'
 
 let consumedReadCapacity = 0
 
@@ -26,17 +26,17 @@ function controlReadCapacity(stream: Readable, provisionedReadCapacity: number):
   })
 }
 
-export function scan(task: ExtractTask, id: ObjectID, provisionedReadCapacity: number): Observable<Document> {
+export function scan(task: Task, provisionedReadCapacity: number): Observable<Document> {
   return Observable.create<Document>((observer) => {
     try {
-      const stream = MongoDB.getCollection(task.db, task.collection)
+      const stream = MongoDB.getCollection(task.extract.db, task.extract.collection)
         .find({
-          ...task.query,
+          ...task.extract.query,
           _id: {
-            $lte: id,
+            $lte: task.from.id,
           },
         })
-        .project(task.projection)
+        .project(task.extract.projection)
         .sort({
           $natural: -1,
         })
@@ -57,14 +57,14 @@ export function scan(task: ExtractTask, id: ObjectID, provisionedReadCapacity: n
   })
 }
 
-export function tail(task: ExtractTask, from: Date): Observable<OpLog> {
+export function tail(task: Task): Observable<OpLog> {
   return Observable.create<OpLog>((observer) => {
     try {
       const cursor = MongoDB.getOplog()
         .find({
-          ns: `${task.db}.${task.collection}`,
+          ns: `${task.extract.db}.${task.extract.collection}`,
           ts: {
-            $gte: new Timestamp(0, from.getTime() / 1000),
+            $gte: new Timestamp(0, task.from.time.getTime() / 1000),
           },
           fromMigrate: {
             $exists: false,

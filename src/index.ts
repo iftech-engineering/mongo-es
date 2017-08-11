@@ -1,23 +1,23 @@
-import { forEach, map, compact, isNil } from 'lodash'
+import { forEach, map, compact } from 'lodash'
 import { Observable } from 'rx'
 
 import { scan, tail } from './extract'
 import { document, oplog } from './transform'
 import { bulk } from './load'
-import { IntermediateRepresentation, ObjectID } from './types'
+import { IntermediateRepresentation } from './types'
 import { Config, MongoDB, Elasticsearch } from './models'
 import { Controls, Task } from './models/Config'
 
-async function scanDocument(controls: Controls, task: Task, id: ObjectID): Promise<void> {
+async function scanDocument(controls: Controls, task: Task): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    scan(task.extract, id, controls.mongodbReadCapacity)
+    scan(task, controls.mongodbReadCapacity)
       .bufferWithTimeOrCount(1000, controls.elasticsearchBulkSize)
       .subscribe(async (docs) => {
         if (docs.length === 0) {
           return
         }
         try {
-          await bulk(task.load, compact<any>(map(docs, doc => document(task, doc))))
+          await bulk(task, compact<any>(map(docs, doc => document(task, doc))))
           console.log('scan', task.name(), docs.length, docs[0]._id.toHexString())
         } catch (err) {
           console.warn('scan', task.name(), err.message)
@@ -26,9 +26,9 @@ async function scanDocument(controls: Controls, task: Task, id: ObjectID): Promi
   })
 }
 
-async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<never> {
+async function tailOpLog(controls: Controls, task: Task): Promise<never> {
   return new Promise<never>((resolve) => {
-    tail(task.extract, from)
+    tail(task)
       .bufferWithTimeOrCount(1000, 50)
       .flatMap((logs) => {
         return Observable.create<IntermediateRepresentation>(async (observer) => {
@@ -46,16 +46,13 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
           return
         }
         try {
-          await bulk(task.load, docs)
+          await bulk(task, docs)
           console.log('tail', task.name(), docs.length)
         } catch (err) {
           console.warn('tail', task.name(), err.message)
         }
       }, (err) => {
-        const oneMinuteAgo = new Date()
-        oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1)
         console.error('tail', task.name(), err)
-        return tailOpLog(controls, task, oneMinuteAgo)
       }, () => {
         console.error('tail', task.name(), 'should not complete')
         resolve()
@@ -64,18 +61,17 @@ async function tailOpLog(controls: Controls, task: Task, from: Date): Promise<ne
 }
 
 async function runTask(config: Config, task: Task) {
-  const from = isNil(task.from.time) ? new Date() : new Date(task.from.time)
   if (task.from.phase === 'scan') {
     try {
       console.log('scan', task.name(), 'start', 'from', task.from.id)
-      await scanDocument(config.controls, task, new ObjectID(task.from.id))
+      await scanDocument(config.controls, task)
       console.log('scan', task.name(), 'end')
     } catch (err) {
       console.error('scan', err)
     }
   }
-  console.log('tail', task.name(), 'start', 'from', from)
-  await tailOpLog(config.controls, task, from)
+  console.log('tail', task.name(), 'start', 'from', task.from.time)
+  await tailOpLog(config.controls, task)
 }
 
 export async function run(config: Config) {

@@ -2,9 +2,9 @@ import { forEach } from 'lodash'
 
 import { IntermediateRepresentation } from './types'
 import { Elasticsearch } from './models'
-import { LoadTask } from './models/Config'
+import { Task } from './models/Config'
 
-export async function bulk(task: LoadTask, IRs: IntermediateRepresentation[]): Promise<void> {
+export async function bulk(task: Task, IRs: IntermediateRepresentation[]): Promise<void> {
   if (IRs.length === 0) {
     return
   }
@@ -15,8 +15,8 @@ export async function bulk(task: LoadTask, IRs: IntermediateRepresentation[]): P
       case 'update': {
         body.push({
           index: {
-            _index: task.index,
-            _type: task.type,
+            _index: task.load.index,
+            _type: task.load.type,
             _id: IR.id,
             _parent: IR.parent,
           },
@@ -27,8 +27,8 @@ export async function bulk(task: LoadTask, IRs: IntermediateRepresentation[]): P
       case 'delete': {
         body.push({
           delete: {
-            _index: task.index,
-            _type: task.type,
+            _index: task.load.index,
+            _type: task.load.type,
             _id: IR.id,
             _parent: IR.parent,
           }

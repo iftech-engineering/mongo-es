@@ -2,7 +2,7 @@ import 'source-map-support/register'
 
 import { ObjectID, Timestamp } from 'mongodb'
 import { OpLog, Document, IntermediateRepresentation } from '../src/types'
-import { TransformTask } from '../src/models/Config'
+import { Task } from '../src/models/Config'
 import { transformer, applyUpdate, ignoreUpdate } from '../src/transform'
 import test from 'ava'
 
@@ -26,25 +26,39 @@ const oplog: OpLog = {
   }
 }
 
-const task: TransformTask = {
-  mapping: {
-    "field0.field1": "field0.field1",
-    "field0.field2": "field0.field2"
-  }
-}
+const task: Task = new Task({
+  from: {
+    phase: 'scan',
+  },
+  extract: {},
+  transform: {
+    mapping: {
+      "field0.field1": "field0.field1",
+      "field0.field2": "field0.field2"
+    }
+  },
+  load: {},
+})
 
-const task2: TransformTask = {
-  mapping: {
-    "field3": "field3"
-  }
-}
+const task2: Task = new Task({
+  from: {
+    phase: 'scan',
+  },
+  extract: {},
+  transform: {
+    mapping: {
+      "field3": "field3"
+    }
+  },
+  load: {},
+})
 
 const doc: Document = {
   _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
   field0: {
     field1: 1,
-    field2: 2
-  }
+    field2: 2,
+  },
 }
 
 test('transformer create', t => {
@@ -54,8 +68,8 @@ test('transformer create', t => {
     data: {
       field0: {
         field1: 1,
-        field2: 2
-      }
+        field2: 2,
+      },
     },
     parent: undefined,
   })
@@ -68,8 +82,8 @@ test('transformer update', t => {
     data: {
       field0: {
         field1: 1,
-        field2: 2
-      }
+        field2: 2,
+      },
     },
     parent: undefined,
   })
@@ -89,7 +103,7 @@ test('applyUpdate', t => {
     _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
     field0: {
       field1: 'set nested field',
-    }
+    },
   })
 })
 
