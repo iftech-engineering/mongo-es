@@ -2,7 +2,8 @@ import { parse, format } from 'url'
 
 import { Collection, Db, MongoClient } from 'mongodb'
 
-import Config from './Config'
+import { ObjectID, Document } from '../types'
+import Config, { Task } from './Config'
 
 export default class MongoDB {
   private static dbs: {
@@ -33,5 +34,18 @@ export default class MongoDB {
 
   public static getCollection(db: string, collection: string): Collection {
     return MongoDB.dbs[db].collection(collection)
+  }
+
+  public static async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
+    try {
+      const doc = await MongoDB.getCollection(task.extract.db, task.extract.collection).findOne({
+        _id: id,
+      })
+      console.debug('retrieve from mongodb', doc)
+      return doc
+    } catch (err) {
+      console.warn('retrieve from mongodb', task.name(), id, err)
+      return null
+    }
   }
 }

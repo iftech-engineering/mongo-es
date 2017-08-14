@@ -7,9 +7,7 @@ import {
 } from 'elasticsearch'
 
 import { ObjectID, Document } from '../types'
-import Config from './Config'
-import { Task } from './Config'
-
+import Config, { Task } from './Config'
 
 export default class Elasticsearch {
   private static client: Client

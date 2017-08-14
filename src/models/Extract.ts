@@ -2,7 +2,7 @@ import { Readable } from 'stream'
 import { Observable } from 'rx'
 
 import { Document, OpLog, Timestamp } from '../types'
-import { MongoDB } from '../models'
+import { MongoDB } from '.'
 import { Task } from './Config'
 
 export default class Extract {

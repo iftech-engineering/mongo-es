@@ -3,7 +3,7 @@ import 'source-map-support/register'
 import { ObjectID, Timestamp } from 'mongodb'
 import { OpLog, Document, IntermediateRepresentation } from '../src/types'
 import { Task } from '../src/models/Config'
-import { transformer, applyUpdate, ignoreUpdate } from '../src/transform'
+import { Transform } from '../src/models'
 import test from 'ava'
 
 const oplog: OpLog = {
@@ -62,7 +62,8 @@ const doc: Document = {
 }
 
 test('transformer create', t => {
-  t.deepEqual(transformer(task, 'create', doc), <IntermediateRepresentation>{
+  const transform = new Transform(task)
+  t.deepEqual(transform.transformer('create', doc), <IntermediateRepresentation>{
     action: 'create',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
@@ -76,7 +77,8 @@ test('transformer create', t => {
 })
 
 test('transformer update', t => {
-  t.deepEqual(transformer(task, 'update', doc), <IntermediateRepresentation>{
+  const transform = new Transform(task)
+  t.deepEqual(transform.transformer('update', doc), <IntermediateRepresentation>{
     action: 'update',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
@@ -90,7 +92,8 @@ test('transformer update', t => {
 })
 
 test('transformer delete', t => {
-  t.deepEqual(transformer(task, 'delete', doc), <IntermediateRepresentation>{
+  const transform = new Transform(task)
+  t.deepEqual(transform.transformer('delete', doc), <IntermediateRepresentation>{
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {},
@@ -99,7 +102,8 @@ test('transformer delete', t => {
 })
 
 test('applyUpdate', t => {
-  t.deepEqual(applyUpdate(task, doc, oplog.o.$set, oplog.o.$unset), {
+  const transform = new Transform(task)
+  t.deepEqual(transform.applyUpdate(doc, oplog.o.$set, oplog.o.$unset), {
     _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
     field0: {
       field1: 'set nested field',
@@ -108,9 +112,11 @@ test('applyUpdate', t => {
 })
 
 test('ignoreUpdate true', t => {
-  t.is(ignoreUpdate(task2, oplog), true)
+  const transform = new Transform(task2)
+  t.is(transform.ignoreUpdate(oplog), true)
 })
 
 test('ignoreUpdate false', t => {
-  t.is(ignoreUpdate(task, oplog), false)
+  const transform = new Transform(task)
+  t.is(transform.ignoreUpdate(oplog), false)
 })
