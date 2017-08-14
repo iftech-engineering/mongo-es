@@ -1,16 +1,15 @@
 import { forEach, map, compact } from 'lodash'
 import { Observable } from 'rx'
 
-import { scan, tail } from './extract'
 import { document, oplog } from './transform'
 import { bulk } from './load'
 import { IntermediateRepresentation } from './types'
-import { Config, MongoDB, Elasticsearch } from './models'
+import { Config, MongoDB, Elasticsearch, Extract } from './models'
 import { Controls, Task } from './models/Config'
 
-async function scanDocument(controls: Controls, task: Task): Promise<void> {
+async function scanDocument(controls: Controls, task: Task, extractor: Extract): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    scan(task, controls.mongodbReadCapacity)
+    extractor.scan()
       .bufferWithTimeOrCount(1000, controls.elasticsearchBulkSize)
       .subscribe(async (docs) => {
         if (docs.length === 0) {
@@ -26,9 +25,9 @@ async function scanDocument(controls: Controls, task: Task): Promise<void> {
   })
 }
 
-async function tailOpLog(controls: Controls, task: Task): Promise<never> {
+async function tailOpLog(controls: Controls, task: Task, extractor: Extract): Promise<never> {
   return new Promise<never>((resolve) => {
-    tail(task)
+    extractor.tail()
       .bufferWithTimeOrCount(1000, 50)
       .flatMap((logs) => {
         return Observable.create<IntermediateRepresentation>(async (observer) => {
@@ -61,17 +60,18 @@ async function tailOpLog(controls: Controls, task: Task): Promise<never> {
 }
 
 async function runTask(config: Config, task: Task) {
+  const extractor = new Extract(task, config.controls.mongodbReadCapacity)
   if (task.from.phase === 'scan') {
     try {
       console.log('scan', task.name(), 'start', 'from', task.from.id)
-      await scanDocument(config.controls, task)
+      await scanDocument(config.controls, task, extractor)
       console.log('scan', task.name(), 'end')
     } catch (err) {
       console.error('scan', err)
     }
   }
   console.log('tail', task.name(), 'start', 'from', task.from.time)
-  await tailOpLog(config.controls, task)
+  await tailOpLog(config.controls, task, extractor)
 }
 
 export async function run(config: Config) {

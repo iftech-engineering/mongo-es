@@ -73,6 +73,12 @@ export class Task {
   public name(): string {
     return `${this.extract.db}.${this.extract.collection} -> ${this.load.index}.${this.load.type}`
   }
+
+  public endScan(): void {
+    this.from.phase = 'tail'
+    this.from.time = new Date(0)
+    delete this.from.id
+  }
 }
 
 export class Controls {
