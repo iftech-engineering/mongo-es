@@ -2,8 +2,8 @@ import { parse, format } from 'url'
 
 import { Collection, Db, MongoClient } from 'mongodb'
 
-import { ObjectID, Document } from '../types'
-import Config, { Task } from './Config'
+import { ObjectID, Document } from './types'
+import Config, { Task } from './config'
 
 export default class MongoDB {
   private static dbs: {

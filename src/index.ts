@@ -2,8 +2,10 @@ import { forEach, map, compact } from 'lodash'
 import { Observable } from 'rx'
 
 import { IntermediateRepresentation } from './types'
-import { Config, MongoDB, Elasticsearch, Processor } from './models'
-import { Controls, Task } from './models/Config'
+import MongoDB from './mongodb'
+import Elasticsearch from './elasticsearch'
+import Processor from './processor'
+import Config, { Controls, Task } from './config'
 
 async function scanDocument(controls: Controls, task: Task, processor: Processor): Promise<void> {
   return new Promise<void>((resolve, reject) => {

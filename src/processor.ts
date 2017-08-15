@@ -3,9 +3,10 @@ import { Readable } from 'stream'
 import { Observable } from 'rx'
 import { forEach, size, get, set, unset, has, keys } from 'lodash'
 
-import { Task, Controls } from './Config'
-import { Elasticsearch, MongoDB } from './index'
-import { IntermediateRepresentation, Document, OpLog, Timestamp } from '../types'
+import { Task, Controls } from './config'
+import Elasticsearch from './elasticsearch'
+import MongoDB from './mongodb'
+import { IntermediateRepresentation, Document, OpLog, Timestamp } from './types'
 
 export default class Processor {
   private task: Task

@@ -2,8 +2,8 @@ import 'source-map-support/register'
 
 import { ObjectID, Timestamp } from 'mongodb'
 import { OpLog, Document, IntermediateRepresentation } from '../src/types'
-import { Controls, Task } from '../src/models/Config'
-import { Processor } from '../src/models'
+import { Controls, Task } from '../src/config'
+import Processor from '../src/processor'
 import test from 'ava'
 
 const oplog: OpLog = {

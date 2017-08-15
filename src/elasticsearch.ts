@@ -6,8 +6,8 @@ import {
   BulkIndexDocumentsParams,
 } from 'elasticsearch'
 
-import { ObjectID, Document } from '../types'
-import Config, { Task } from './Config'
+import { ObjectID, Document } from './types'
+import Config, { Task } from './config'
 
 export default class Elasticsearch {
   private static client: Client

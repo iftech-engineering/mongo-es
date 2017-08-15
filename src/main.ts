@@ -3,7 +3,7 @@
 import { readFile } from 'fs'
 import { resolve as resolvePath } from 'path'
 
-import { Config } from './models'
+import Config from './config'
 import { run } from './index'
 
 async function readConfig(path: string): Promise<Config> {
