@@ -15,7 +15,7 @@
     "start": "node ./dist/src/main.js",
     "build": "rm -rf ./dist && tsc",
     "dev": "rm -rf ./dist && tsc -w & NODE_ENV=dev nodemon ./dist/src/main.js",
-    "test": "rm -rf ./dist && tsc && ava ./dist/test/**-test.js"
+    "test": "rm -rf ./dist && tsc && ava ./dist/test"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.com"

@@ -2,8 +2,8 @@ import 'source-map-support/register'
 
 import { ObjectID, Timestamp } from 'mongodb'
 import { OpLog, Document, IntermediateRepresentation } from '../src/types'
-import { Task } from '../src/models/Config'
-import { Transform } from '../src/models'
+import { Controls, Task } from '../src/models/Config'
+import { Processor } from '../src/models'
 import test from 'ava'
 
 const oplog: OpLog = {
@@ -62,8 +62,8 @@ const doc: Document = {
 }
 
 test('transformer create', t => {
-  const transform = new Transform(task)
-  t.deepEqual(transform.transformer('create', doc), <IntermediateRepresentation>{
+  const processor = new Processor(task, new Controls({}))
+  t.deepEqual(processor.transformer('create', doc), <IntermediateRepresentation>{
     action: 'create',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
@@ -77,8 +77,8 @@ test('transformer create', t => {
 })
 
 test('transformer update', t => {
-  const transform = new Transform(task)
-  t.deepEqual(transform.transformer('update', doc), <IntermediateRepresentation>{
+  const processor = new Processor(task, new Controls({}))
+  t.deepEqual(processor.transformer('update', doc), <IntermediateRepresentation>{
     action: 'update',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
@@ -92,8 +92,8 @@ test('transformer update', t => {
 })
 
 test('transformer delete', t => {
-  const transform = new Transform(task)
-  t.deepEqual(transform.transformer('delete', doc), <IntermediateRepresentation>{
+  const processor = new Processor(task, new Controls({}))
+  t.deepEqual(processor.transformer('delete', doc), <IntermediateRepresentation>{
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {},
@@ -102,7 +102,7 @@ test('transformer delete', t => {
 })
 
 test('applyUpdate', t => {
-  const transform = new Transform(task)
+  const transform = new Processor(task, new Controls({}))
   t.deepEqual(transform.applyUpdate(doc, oplog.o.$set, oplog.o.$unset), {
     _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
     field0: {
@@ -112,11 +112,11 @@ test('applyUpdate', t => {
 })
 
 test('ignoreUpdate true', t => {
-  const transform = new Transform(task2)
-  t.is(transform.ignoreUpdate(oplog), true)
+  const processor = new Processor(task2, new Controls({}))
+  t.is(processor.ignoreUpdate(oplog), true)
 })
 
 test('ignoreUpdate false', t => {
-  const transform = new Transform(task)
-  t.is(transform.ignoreUpdate(oplog), false)
+  const processor = new Processor(task, new Controls({}))
+  t.is(processor.ignoreUpdate(oplog), false)
 })

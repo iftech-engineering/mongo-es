@@ -1,13 +1,11 @@
 import Config from './Config'
 import Elasticsearch from './Elasticsearch'
-import Extract from './Extract'
 import MongoDB from './MongoDB'
-import Transform from './Transform'
+import Processor from './Processor'
 
 export {
   Config,
   Elasticsearch,
-  Extract,
   MongoDB,
-  Transform,
+  Processor,
 }
