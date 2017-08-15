@@ -1,7 +1,7 @@
 import { Readable } from 'stream'
 
 import { Observable } from 'rx'
-import { forEach, size, get, set, unset, has, keys } from 'lodash'
+import { forEach, size, get, set, unset, has, keys, compact, map } from 'lodash'
 import { Timestamp } from 'mongodb'
 
 import { Task, Controls } from './config'
@@ -26,7 +26,7 @@ export default class Processor {
     if (!Processor.provisionedReadCapacity) {
       return
     }
-    setInterval(() => {
+    const interval = setInterval(() => {
       Processor.consumedReadCapacity = 0
       stream.resume()
     }, 1000)
@@ -35,6 +35,9 @@ export default class Processor {
       if (Processor.consumedReadCapacity >= Processor.provisionedReadCapacity) {
         stream.pause()
       }
+    })
+    stream.addListener('end', () => {
+      clearInterval(interval)
     })
   }
 
@@ -229,5 +232,57 @@ export default class Processor {
       }
     })
     return await Elasticsearch.bulk({ body })
+  }
+
+  public async scanDocument(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.scan()
+        .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
+        .subscribe(async (docs) => {
+          if (docs.length === 0) {
+            return
+          }
+          try {
+            await this.load(compact<any>(map(docs, doc => this.document(doc))))
+            console.log('scan', this.task.name(), docs.length, docs[0]._id.toHexString())
+          } catch (err) {
+            console.warn('scan', this.task.name(), err.message)
+          }
+        }, reject, resolve)
+    })
+  }
+
+  public async tailOpLog(): Promise<never> {
+    return new Promise<never>((resolve) => {
+      this.tail()
+        .bufferWithTimeOrCount(1000, 50)
+        .flatMap((logs) => {
+          return Observable.create<IntermediateRepresentation>(async (observer) => {
+            for (let log of logs) {
+              const doc = await this.oplog(log)
+              if (doc) {
+                observer.onNext(doc)
+              }
+            }
+          })
+        })
+        .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
+        .subscribe(async (docs) => {
+          if (docs.length === 0) {
+            return
+          }
+          try {
+            await this.load(docs)
+            console.log('tail', this.task.name(), docs.length)
+          } catch (err) {
+            console.warn('tail', this.task.name(), err.message)
+          }
+        }, (err) => {
+          console.error('tail', this.task.name(), err)
+        }, () => {
+          console.error('tail', this.task.name(), 'should not complete')
+          resolve()
+        })
+    })
   }
 }
