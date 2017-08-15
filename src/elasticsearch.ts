@@ -5,8 +5,9 @@ import {
   IndicesExistsParams,
   BulkIndexDocumentsParams,
 } from 'elasticsearch'
+import { ObjectID } from 'mongodb'
 
-import { ObjectID, Document } from './types'
+import { Document } from './types'
 import Config, { Task } from './config'
 
 export default class Elasticsearch {
