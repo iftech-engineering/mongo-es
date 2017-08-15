@@ -5,13 +5,15 @@ export type Document = {
   [key: string]: any
 }
 
-export type OplogDiff = {
+export type OplogInsert = {
   op: 'i'
   o: {
     _id: ObjectID
     [key: string]: any
   }
-} | {
+}
+
+export type OplogUpdate = {
   op: 'u'
   o: {
     $set?: any
@@ -21,7 +23,9 @@ export type OplogDiff = {
   o2: {
     _id: ObjectID
   }
-} | {
+}
+
+export type OplogDelete = {
   op: 'd'
   o: {
     _id: ObjectID
@@ -35,11 +39,17 @@ export type OpLog = {
   v: number
   ns: string
   fromMigrate?: boolean
-} & OplogDiff
+} & (OplogInsert | OplogUpdate | OplogDelete)
 
-export type IntermediateRepresentation = {
-  action: 'create' | 'update' | 'delete'
+export type IR = {
+  action: 'upsert'
   id: string
   parent?: string
-  data: any
+  data: {
+    [key: string]: any
+  }
+} | {
+  action: 'delete'
+  id: string
+  parent?: string
 }

@@ -1,7 +1,7 @@
 import 'source-map-support/register'
 
 import { ObjectID, Timestamp } from 'mongodb'
-import { OpLog, Document, IntermediateRepresentation } from '../src/types'
+import { OpLog, Document, IR } from '../src/types'
 import { Controls, Task } from '../src/config'
 import Processor from '../src/processor'
 import test from 'ava'
@@ -63,8 +63,8 @@ const doc: Document = {
 
 test('transformer create', t => {
   const processor = new Processor(task, new Controls({}))
-  t.deepEqual(processor.transformer('create', doc), <IntermediateRepresentation>{
-    action: 'create',
+  t.deepEqual(processor.transformer('upsert', doc), <IR>{
+    action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
       field0: {
@@ -78,8 +78,8 @@ test('transformer create', t => {
 
 test('transformer update', t => {
   const processor = new Processor(task, new Controls({}))
-  t.deepEqual(processor.transformer('update', doc), <IntermediateRepresentation>{
-    action: 'update',
+  t.deepEqual(processor.transformer('upsert', doc), <IR>{
+    action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
       field0: {
@@ -93,10 +93,9 @@ test('transformer update', t => {
 
 test('transformer delete', t => {
   const processor = new Processor(task, new Controls({}))
-  t.deepEqual(processor.transformer('delete', doc), <IntermediateRepresentation>{
+  t.deepEqual(processor.transformer('delete', doc), <IR>{
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
-    data: {},
     parent: undefined,
   })
 })

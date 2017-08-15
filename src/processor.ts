@@ -1,13 +1,13 @@
 import { Readable } from 'stream'
 
 import { Observable } from 'rx'
-import { forEach, size, get, set, unset, has, keys, compact, map } from 'lodash'
+import { forEach, size, get, set, unset, has, keys, compact, map, reduce, isEmpty } from 'lodash'
 import { Timestamp } from 'mongodb'
 
 import { Task, Controls } from './config'
 import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
-import { IntermediateRepresentation, Document, OpLog } from './types'
+import { IR, Document, OpLog } from './types'
 
 export default class Processor {
   private task: Task
@@ -41,25 +41,29 @@ export default class Processor {
     })
   }
 
-  public transformer(action: 'create' | 'update' | 'delete', doc: Document): IntermediateRepresentation | null {
-    const IR: IntermediateRepresentation = {
-      action,
-      id: doc._id.toHexString(),
-      data: {},
-      parent: this.task.transform.parent && get<string>(doc, this.task.transform.parent)
-    }
+  public transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
     if (action === 'delete') {
-      return IR
-    }
-    forEach(this.task.transform.mapping, (value, key) => {
-      if (has(doc, key)) {
-        set(IR.data, value, get(doc, key))
+      return {
+        action: 'delete',
+        id: doc._id.toHexString(),
+        parent: this.task.transform.parent && get<string>(doc, this.task.transform.parent),
       }
-    })
-    if (size(IR.data) === 0) {
+    }
+    const data = reduce(this.task.transform.mapping, (obj, value, key) => {
+      if (has(doc, key)) {
+        set(obj, value, get(doc, key))
+      }
+      return obj
+    }, {})
+    if (isEmpty(data)) {
       return null
     }
-    return IR
+    return {
+      action: 'upsert',
+      id: doc._id.toHexString(),
+      data,
+      parent: this.task.transform.parent && get<string>(doc, this.task.transform.parent),
+    }
   }
 
   public applyUpdate(doc: Document, $set: any = {}, $unset: any = {}): Document {
@@ -146,15 +150,15 @@ export default class Processor {
   }
 
 
-  public async document(doc: Document): Promise<IntermediateRepresentation | null> {
-    return await this.transformer('create', doc)
+  public async document(doc: Document): Promise<IR | null> {
+    return await this.transformer('upsert', doc)
   }
 
-  public async oplog(oplog: OpLog): Promise<IntermediateRepresentation | null> {
+  public async oplog(oplog: OpLog): Promise<IR | null> {
     try {
       switch (oplog.op) {
         case 'i': {
-          return this.transformer('create', oplog.o)
+          return this.transformer('upsert', oplog.o)
         }
         case 'u': {
           if (size(oplog.o2) !== 1 || !oplog.o2._id) {
@@ -166,7 +170,7 @@ export default class Processor {
             return null
           }
           if (keys(oplog.o).filter(key => key.startsWith('$')).length === 0) {
-            return this.transformer('update', {
+            return this.transformer('upsert', {
               _id: oplog.o2._id,
               ...oplog.o,
             })
@@ -174,8 +178,10 @@ export default class Processor {
           const old = this.task.transform.parent
             ? await Elasticsearch.search(this.task, oplog.o2._id)
             : await Elasticsearch.retrieve(this.task, oplog.o2._id)
-          const doc = old ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset) : await MongoDB.retrieve(this.task, oplog.o2._id)
-          return doc ? this.transformer('update', doc) : null
+          const doc = old
+            ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset)
+            : await MongoDB.retrieve(this.task, oplog.o2._id)
+          return doc ? this.transformer('upsert', doc) : null
         }
         case 'd': {
           if (size(oplog.o) !== 1 || !oplog.o._id) {
@@ -198,34 +204,33 @@ export default class Processor {
     }
   }
 
-  public async load(IRs: IntermediateRepresentation[]): Promise<void> {
-    if (IRs.length === 0) {
+  public async load(irs: IR[]): Promise<void> {
+    if (irs.length === 0) {
       return
     }
     const body: any[] = []
-    IRs.forEach((IR) => {
-      switch (IR.action) {
-        case 'create':
-        case 'update': {
+    irs.forEach((ir) => {
+      switch (ir.action) {
+        case 'upsert': {
           body.push({
             index: {
               _index: this.task.load.index,
               _type: this.task.load.type,
-              _id: IR.id,
-              _parent: IR.parent,
+              _id: ir.id,
+              _parent: ir.parent,
             },
           })
-          body.push(IR.data)
+          body.push(ir.data)
           break
         }
         case 'delete': {
           body.push({
-            delete: {
+            'delete': {
               _index: this.task.load.index,
               _type: this.task.load.type,
-              _id: IR.id,
-              _parent: IR.parent,
-            }
+              _id: ir.id,
+              _parent: ir.parent,
+            },
           })
           break
         }
@@ -257,7 +262,7 @@ export default class Processor {
       this.tail()
         .bufferWithTimeOrCount(1000, 50)
         .flatMap((logs) => {
-          return Observable.create<IntermediateRepresentation>(async (observer) => {
+          return Observable.create<IR>(async (observer) => {
             for (let log of logs) {
               const doc = await this.oplog(log)
               if (doc) {
