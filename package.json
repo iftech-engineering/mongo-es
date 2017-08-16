@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "2.0.0",
+  "version": "2.0.0-pre1",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -41,10 +41,12 @@
   },
   "devDependencies": {
     "@types/elasticsearch": "5.0.14",
+    "@types/ioredis": "0.0.24",
     "@types/lodash": "4.14.71",
     "@types/mongodb": "2.2.9",
     "@types/rx": "4.1.1",
     "ava": "0.21.0",
+    "ioredis": "3.1.4",
     "nodemon": "1.11.0",
     "source-map-support": "0.4.15",
     "typescript": "2.4.2"

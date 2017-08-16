@@ -39,14 +39,16 @@ export async function run(config: Config): Promise<void> {
     const processor = new Processor(task, config.controls)
     if (task.from.phase === 'scan') {
       try {
-        console.log('scan', task.name(), 'start', task.from.id)
+        console.log('scan', task.name(), 'from', task.from.id)
+        const time = new Date()
         await processor.scanDocument()
+        await task.endScan(time)
         console.log('scan', task.name(), 'end')
       } catch (err) {
         console.error('scan', err)
       }
     }
-    console.log('tail', task.name(), 'start', task.from.time)
+    console.log('tail', task.name(), 'from', task.from.time)
     await processor.tailOpLog()
   }))
 }

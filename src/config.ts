@@ -63,7 +63,7 @@ export class Task {
   extract: ExtractTask
   transform: TransformTask
   load: LoadTask
-  private static onSaveCallback: (checkPoint: CheckPoint) => Promise<void>
+  private static onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>
   private static onLoadCallback: (name: string) => Promise<any | null>
 
   constructor({ from, extract, transform, load }) {
@@ -77,23 +77,24 @@ export class Task {
     return `${this.extract.db}.${this.extract.collection}___${this.load.index}.${this.load.type}`
   }
 
-  public endScan(): void {
+  public async endScan(time: Date): Promise<void> {
     this.from.phase = 'tail'
-    this.from.time = new Date(0)
+    this.from.time = time
     delete this.from.id
+    await Task.saveCheckpoint(this.name(), this.from)
   }
 
-  public static setOnSave(onSaveCallback: (checkPoint: CheckPoint) => Promise<void>) {
+  public static onSaveCheckpoint(onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>) {
     Task.onSaveCallback = onSaveCallback
   }
 
-  public static setOnLoad(onLoadCallback: (name: string) => Promise<any | null>) {
+  public static onLoadCheckpoint(onLoadCallback: (name: string) => Promise<any | null>) {
     Task.onLoadCallback = onLoadCallback
   }
 
-  public static async saveCheckpoint(checkPoint: CheckPoint): Promise<void> {
+  public static async saveCheckpoint(name: string, checkPoint: CheckPoint): Promise<void> {
     if (Task.onSaveCallback) {
-      await Task.onSaveCallback(checkPoint)
+      await Task.onSaveCallback(name, checkPoint)
     }
   }
 

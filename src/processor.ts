@@ -111,7 +111,6 @@ export default class Processor {
           observer.onError(err)
         })
         stream.addListener('end', () => {
-          this.task.endScan()
           observer.onCompleted()
         })
       } catch (err) {
@@ -245,7 +244,7 @@ export default class Processor {
           }
           try {
             await this.load(irs)
-            await Task.saveCheckpoint(new CheckPoint({
+            await Task.saveCheckpoint(this.task.name(), new CheckPoint({
               phase: 'scan',
               id: irs[0].id,
             }))
@@ -278,7 +277,7 @@ export default class Processor {
           }
           try {
             await this.load(irs)
-            await Task.saveCheckpoint(new CheckPoint({
+            await Task.saveCheckpoint(this.task.name(), new CheckPoint({
               phase: 'tail',
               time: Date.now() - 1000 * 10,
             }))
