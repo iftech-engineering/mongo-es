@@ -29,7 +29,7 @@ export default class MongoDB {
   }
 
   public static getOplog(): Collection {
-    return MongoDB.dbs['local'].collection('rs.oplog')
+    return MongoDB.dbs['local'].collection('oplog.rs')
   }
 
   public static getCollection(db: string, collection: string): Collection {
