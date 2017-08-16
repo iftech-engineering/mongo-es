@@ -3,7 +3,7 @@ import { parse, format } from 'url'
 import { Collection, Db, MongoClient, ObjectID } from 'mongodb'
 
 import { Document } from './types'
-import Config, { Task } from './config'
+import { Config, Task } from './config'
 
 export default class MongoDB {
   private static dbs: {

@@ -27,6 +27,7 @@ export class CheckPoint {
   time: Date
 
   constructor({ phase, id = 'FFFFFFFFFFFFFFFFFFFFFFFF', time = 0 }) {
+    this.phase = phase
     if (phase === 'scan') {
       this.id = new ObjectID(id)
       return
@@ -62,6 +63,8 @@ export class Task {
   extract: ExtractTask
   transform: TransformTask
   load: LoadTask
+  private static onSaveCallback: (checkPoint: CheckPoint) => Promise<void>
+  private static onLoadCallback: (name: string) => Promise<any | null>
 
   constructor({ from, extract, transform, load }) {
     this.from = new CheckPoint(from)
@@ -71,13 +74,35 @@ export class Task {
   }
 
   public name(): string {
-    return `${this.extract.db}.${this.extract.collection} -> ${this.load.index}.${this.load.type}`
+    return `${this.extract.db}.${this.extract.collection}___${this.load.index}.${this.load.type}`
   }
 
   public endScan(): void {
     this.from.phase = 'tail'
     this.from.time = new Date(0)
     delete this.from.id
+  }
+
+  public static setOnSave(onSaveCallback: (checkPoint: CheckPoint) => Promise<void>) {
+    Task.onSaveCallback = onSaveCallback
+  }
+
+  public static setOnLoad(onLoadCallback: (name: string) => Promise<any | null>) {
+    Task.onLoadCallback = onLoadCallback
+  }
+
+  public static async saveCheckpoint(checkPoint: CheckPoint): Promise<void> {
+    if (Task.onSaveCallback) {
+      await Task.onSaveCallback(checkPoint)
+    }
+  }
+
+  public static async loadCheckpoint(name: string): Promise<CheckPoint | null> {
+    const obj = await Task.onLoadCallback(name)
+    if (Task.onLoadCallback && obj && obj.phase) {
+      return new CheckPoint(obj)
+    }
+    return null
   }
 }
 
@@ -93,26 +118,17 @@ export class Controls {
   }
 }
 
-export default class Config {
+export class Config {
   mongodb: MongoConfig
   elasticsearch: ElasticsearchConfig
   tasks: Task[]
   controls: Controls
 
-  public constructor(str: string) {
+  constructor(str: string) {
     const { mongodb, elasticsearch, tasks, controls } = JSON.parse(str)
     this.mongodb = new MongoConfig(mongodb)
     this.elasticsearch = new ElasticsearchConfig(elasticsearch)
     this.tasks = tasks.map(task => new Task(task))
     this.controls = new Controls(controls)
-  }
-
-  public dump(): string {
-    return JSON.stringify({
-      mongodb: this.mongodb,
-      elasticsearch: this.elasticsearch,
-      tasks: this.tasks,
-      controls: this.controls,
-    }, null, 2)
   }
 }

@@ -1,9 +1,9 @@
 import MongoDB from './mongodb'
 import Elasticsearch from './elasticsearch'
 import Processor from './processor'
-import Config from './config'
+import { Config, Task } from './config'
 
-export async function run(config: Config) {
+export async function run(config: Config): Promise<void> {
   // init mongodb and elasticsearch connection
   console.log('run', new Date())
   await MongoDB.init(config)
@@ -19,28 +19,38 @@ export async function run(config: Config) {
   }
 
   // put mappings
-  for (let index in config.tasks) {
-    const task = config.tasks[index]
+  for (let task of config.tasks) {
     task.load.index += config.controls.indexNameSuffix
     await Elasticsearch.putMapping(task.load)
     console.log('put mapping', task.load.index, task.load.type)
   }
 
+  // load checkpoint
+  for (let task of config.tasks) {
+    const checkpoint = await Task.loadCheckpoint(task.name())
+    if (checkpoint) {
+      task.from = checkpoint
+    }
+    console.log('from checkpoint', task.name(), task.from)
+  }
+
   // run tasks
-  config.tasks.forEach(async (task) => {
+  await Promise.all(config.tasks.map(async (task) => {
     const processor = new Processor(task, config.controls)
     if (task.from.phase === 'scan') {
       try {
-        console.log('scan', task.name(), 'start', 'from', task.from.id)
+        console.log('scan', task.name(), 'start', task.from.id)
         await processor.scanDocument()
         console.log('scan', task.name(), 'end')
       } catch (err) {
         console.error('scan', err)
       }
     }
-    console.log('tail', task.name(), 'start', 'from', task.from.time)
+    console.log('tail', task.name(), 'start', task.from.time)
     await processor.tailOpLog()
-  })
+  }))
 }
 
 console.debug = process.env.NODE_ENV === 'dev' ? console.log : () => null
+
+export { Config, Task }

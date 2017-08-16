@@ -8,7 +8,7 @@ import {
 import { ObjectID } from 'mongodb'
 
 import { Document } from './types'
-import Config, { Task } from './config'
+import { Config, Task } from './config'
 
 export default class Elasticsearch {
   private static client: Client

@@ -4,7 +4,7 @@ import { Observable } from 'rx'
 import { forEach, size, get, set, unset, has, keys, compact, map, reduce, isEmpty } from 'lodash'
 import { Timestamp } from 'mongodb'
 
-import { Task, Controls } from './config'
+import { Task, Controls, CheckPoint } from './config'
 import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
 import { IR, Document, OpLog } from './types'
@@ -149,11 +149,6 @@ export default class Processor {
     })
   }
 
-
-  public async document(doc: Document): Promise<IR | null> {
-    return await this.transformer('upsert', doc)
-  }
-
   public async oplog(oplog: OpLog): Promise<IR | null> {
     try {
       switch (oplog.op) {
@@ -243,13 +238,18 @@ export default class Processor {
     return new Promise<void>((resolve, reject) => {
       this.scan()
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .subscribe(async (docs) => {
-          if (docs.length === 0) {
+        .map(docs => compact<IR>(map(docs, doc => this.transformer('upsert', doc))))
+        .subscribe(async (irs) => {
+          if (irs.length === 0) {
             return
           }
           try {
-            await this.load(compact<any>(map(docs, doc => this.document(doc))))
-            console.log('scan', this.task.name(), docs.length, docs[0]._id.toHexString())
+            await this.load(irs)
+            await Task.saveCheckpoint(new CheckPoint({
+              phase: 'scan',
+              id: irs[0].id,
+            }))
+            console.log('scan', this.task.name(), irs.length, irs[0].id)
           } catch (err) {
             console.warn('scan', this.task.name(), err.message)
           }
@@ -264,21 +264,25 @@ export default class Processor {
         .flatMap((logs) => {
           return Observable.create<IR>(async (observer) => {
             for (let log of logs) {
-              const doc = await this.oplog(log)
-              if (doc) {
-                observer.onNext(doc)
+              const ir = await this.oplog(log)
+              if (ir) {
+                observer.onNext(ir)
               }
             }
           })
         })
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .subscribe(async (docs) => {
-          if (docs.length === 0) {
+        .subscribe(async (irs) => {
+          if (irs.length === 0) {
             return
           }
           try {
-            await this.load(docs)
-            console.log('tail', this.task.name(), docs.length)
+            await this.load(irs)
+            await Task.saveCheckpoint(new CheckPoint({
+              phase: 'tail',
+              time: Date.now() - 1000 * 10,
+            }))
+            console.log('tail', this.task.name(), irs.length)
           } catch (err) {
             console.warn('tail', this.task.name(), err.message)
           }
