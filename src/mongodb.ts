@@ -1,6 +1,7 @@
 import { parse, format } from 'url'
+import { Readable } from 'stream'
 
-import { Collection, Db, MongoClient, ObjectID } from 'mongodb'
+import { Timestamp, Cursor, Db, MongoClient, ObjectID } from 'mongodb'
 
 import { Document } from './types'
 import { Config, Task } from './config'
@@ -28,17 +29,42 @@ export default class MongoDB {
     }
   }
 
-  public static getOplog(): Collection {
+  public static getOplog(task: Task): Cursor {
     return MongoDB.dbs['local'].collection('oplog.rs')
+      .find({
+        ns: `${task.extract.db}.${task.extract.collection}`,
+        ts: {
+          $gte: new Timestamp(0, task.from.time.getTime() / 1000),
+        },
+        fromMigrate: {
+          $exists: false,
+        },
+      }, {
+        tailable: true,
+        oplogReplay: true,
+        noCursorTimeout: true,
+        awaitData: true,
+      })
   }
 
-  public static getCollection(db: string, collection: string): Collection {
-    return MongoDB.dbs[db].collection(collection)
+  public static getCollection(task: Task): Readable {
+    return MongoDB.dbs[task.extract.db].collection(task.extract.collection)
+      .find({
+        ...task.extract.query,
+        _id: {
+          $lte: task.from.id,
+        },
+      })
+      .project(task.extract.projection)
+      .sort({
+        $natural: -1,
+      })
+      .stream()
   }
 
   public static async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
     try {
-      const doc = await MongoDB.getCollection(task.extract.db, task.extract.collection).findOne({
+      const doc = await MongoDB.dbs[task.extract.db].collection(task.extract.collection).findOne({
         _id: id,
       })
       console.debug('retrieve from mongodb', doc)

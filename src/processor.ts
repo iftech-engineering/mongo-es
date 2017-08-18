@@ -2,7 +2,6 @@ import { Readable } from 'stream'
 
 import { Observable } from 'rx'
 import { forEach, size, get, set, unset, has, keys, compact, map, reduce, isEmpty } from 'lodash'
-import { Timestamp } from 'mongodb'
 
 import { Task, Controls, CheckPoint } from './config'
 import Elasticsearch from './elasticsearch'
@@ -22,9 +21,9 @@ export default class Processor {
     Processor.consumedReadCapacity = 0
   }
 
-  private static controlReadCapacity(stream: Readable): void {
+  private static controlReadCapacity(stream: Readable): Readable {
     if (!Processor.provisionedReadCapacity) {
-      return
+      return stream
     }
     const interval = setInterval(() => {
       Processor.consumedReadCapacity = 0
@@ -39,6 +38,7 @@ export default class Processor {
     stream.addListener('end', () => {
       clearInterval(interval)
     })
+    return stream
   }
 
   public transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
@@ -91,19 +91,7 @@ export default class Processor {
   public scan(): Observable<Document> {
     return Observable.create<Document>((observer) => {
       try {
-        const stream = MongoDB.getCollection(this.task.extract.db, this.task.extract.collection)
-          .find({
-            ...this.task.extract.query,
-            _id: {
-              $lte: this.task.from.id,
-            },
-          })
-          .project(this.task.extract.projection)
-          .sort({
-            $natural: -1,
-          })
-          .stream()
-        Processor.controlReadCapacity(stream)
+        const stream = Processor.controlReadCapacity(MongoDB.getCollection(this.task))
         stream.addListener('data', (doc: Document) => {
           observer.onNext(doc)
         })
@@ -122,21 +110,7 @@ export default class Processor {
   public tail(): Observable<OpLog> {
     return Observable.create<OpLog>((observer) => {
       try {
-        const cursor = MongoDB.getOplog()
-          .find({
-            ns: `${this.task.extract.db}.${this.task.extract.collection}`,
-            ts: {
-              $gte: new Timestamp(0, this.task.from.time.getTime() / 1000),
-            },
-            fromMigrate: {
-              $exists: false,
-            },
-          }, {
-            tailable: true,
-            oplogReplay: true,
-            noCursorTimeout: true,
-            awaitData: true,
-          })
+        const cursor = MongoDB.getOplog(this.task)
         cursor.forEach((log: OpLog) => {
           observer.onNext(log)
         }, () => {

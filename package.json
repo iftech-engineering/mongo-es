@@ -34,21 +34,21 @@
   },
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
-    "elasticsearch": "13.2.0",
+    "elasticsearch": "13.3.1",
     "lodash": "4.17.4",
-    "mongodb": "2.2.30",
+    "mongodb": "2.2.31",
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.14",
+    "@types/elasticsearch": "5.0.16",
     "@types/ioredis": "0.0.24",
-    "@types/lodash": "4.14.71",
-    "@types/mongodb": "2.2.9",
+    "@types/lodash": "4.14.73",
+    "@types/mongodb": "2.2.10",
     "@types/rx": "4.1.1",
-    "ava": "0.21.0",
+    "ava": "0.22.0",
     "ioredis": "3.1.4",
     "nodemon": "1.11.0",
-    "source-map-support": "0.4.15",
+    "source-map-support": "0.4.16",
     "typescript": "2.4.2"
   }
 }

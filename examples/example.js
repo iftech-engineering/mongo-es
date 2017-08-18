@@ -14,4 +14,4 @@ Task.onLoadCheckpoint((name) => {
   return redis.get(`mongo-es:${name}`).then(JSON.parse)
 })
 
-run(new Config(fs.readFileSync('config.json', 'utf8')))
+run(new Config(fs.readFileSync('examples/config.json', 'utf8')))
