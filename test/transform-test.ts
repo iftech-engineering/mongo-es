@@ -1,6 +1,9 @@
+import 'source-map-support/register'
+
 import { ObjectID, Timestamp } from 'mongodb'
-import { OpLog, TransformTask, Document, IntermediateRepresentation } from '../src/types'
-import { transformer, applyUpdate, ignoreUpdate } from '../src/transform'
+import { OpLog, Document, IR } from '../src/types'
+import { Controls, Task } from '../src/config'
+import Processor from '../src/processor'
 import test from 'ava'
 
 const oplog: OpLog = {
@@ -23,77 +26,96 @@ const oplog: OpLog = {
   }
 }
 
-const task: TransformTask = {
-  mapping: {
-    "field0.field1": "field0.field1",
-    "field0.field2": "field0.field2"
-  }
-}
+const task: Task = new Task({
+  from: {
+    phase: 'scan',
+  },
+  extract: {},
+  transform: {
+    mapping: {
+      "field0.field1": "field0.field1",
+      "field0.field2": "field0.field2"
+    }
+  },
+  load: {},
+})
 
-const task2: TransformTask = {
-  mapping: {
-    "field3": "field3"
-  }
-}
+const task2: Task = new Task({
+  from: {
+    phase: 'scan',
+  },
+  extract: {},
+  transform: {
+    mapping: {
+      "field3": "field3"
+    }
+  },
+  load: {},
+})
 
 const doc: Document = {
   _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
   field0: {
     field1: 1,
-    field2: 2
-  }
+    field2: 2,
+  },
 }
 
 test('transformer create', t => {
-  t.deepEqual(transformer(task, 'create', doc), <IntermediateRepresentation>{
-    action: 'create',
+  const processor = new Processor(task, new Controls({}))
+  t.deepEqual(processor.transformer('upsert', doc), <IR>{
+    action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
       field0: {
         field1: 1,
-        field2: 2
-      }
+        field2: 2,
+      },
     },
     parent: undefined,
   })
 })
 
 test('transformer update', t => {
-  t.deepEqual(transformer(task, 'update', doc), <IntermediateRepresentation>{
-    action: 'update',
+  const processor = new Processor(task, new Controls({}))
+  t.deepEqual(processor.transformer('upsert', doc), <IR>{
+    action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
       field0: {
         field1: 1,
-        field2: 2
-      }
+        field2: 2,
+      },
     },
     parent: undefined,
   })
 })
 
 test('transformer delete', t => {
-  t.deepEqual(transformer(task, 'delete', doc), <IntermediateRepresentation>{
+  const processor = new Processor(task, new Controls({}))
+  t.deepEqual(processor.transformer('delete', doc), <IR>{
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
-    data: {},
     parent: undefined,
   })
 })
 
 test('applyUpdate', t => {
-  t.deepEqual(applyUpdate(task, doc, oplog.o.$set, oplog.o.$unset), {
+  const transform = new Processor(task, new Controls({}))
+  t.deepEqual(transform.applyUpdate(doc, oplog.o.$set, oplog.o.$unset), {
     _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
     field0: {
       field1: 'set nested field',
-    }
+    },
   })
 })
 
 test('ignoreUpdate true', t => {
-  t.is(ignoreUpdate(task2, oplog), true)
+  const processor = new Processor(task2, new Controls({}))
+  t.is(processor.ignoreUpdate(oplog), true)
 })
 
 test('ignoreUpdate false', t => {
-  t.is(ignoreUpdate(task, oplog), false)
+  const processor = new Processor(task, new Controls({}))
+  t.is(processor.ignoreUpdate(oplog), false)
 })
