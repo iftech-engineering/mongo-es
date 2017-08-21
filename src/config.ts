@@ -93,17 +93,28 @@ export class Task {
   }
 
   public static async saveCheckpoint(name: string, checkPoint: CheckPoint): Promise<void> {
-    if (Task.onSaveCallback) {
-      await Task.onSaveCallback(name, checkPoint)
+    if (Task.onSaveCallback && Task.onSaveCallback instanceof Function) {
+      try {
+        await Task.onSaveCallback(name, checkPoint)
+      } catch (err) {
+        console.error('on save checkpoint', name, checkPoint, err)
+      }
     }
   }
 
   public static async loadCheckpoint(name: string): Promise<CheckPoint | null> {
-    const obj = await Task.onLoadCallback(name)
-    if (Task.onLoadCallback && obj && obj.phase) {
-      return new CheckPoint(obj)
+    try {
+      if (Task.onLoadCallback && Task.onLoadCallback instanceof Function) {
+        const obj = await Task.onLoadCallback(name)
+        if (obj && obj.phase) {
+          return new CheckPoint(obj)
+        }
+      }
+      return null
+    } catch (err) {
+      console.error('on load checkpoint', name, err)
+      return null
     }
-    return null
   }
 }
 
