@@ -13,12 +13,12 @@
   },
   "elasticsearch": {
     "options": {
-      "host": "http://localhost:9200",
+      "host": "http://host:9200",
       "apiVersion": "5.2"
     },
     "indices": [
       {
-        "index": "index0",
+        "index": "banner",
         "body": {
           "settings": {
             "index": {
@@ -34,78 +34,47 @@
   "tasks": [
     {
       "from": {
-        "phase": "scan",
-        "time": 0
-      },
-      "extract": {
-        "db": "db0",
-        "collection": "collection0",
-        "query": {
-          "createdAt": {
-            "gte": 1494000000000
-          }
-        },
-        "projection": {
-          "field0": 1,
-          "field1": 1,
-          "field2": 1
-        }
-      },
-      "transform": {
-        "parent": "field2",
-        "mapping": {
-          "field0": "property0",
-          "field1": "property1"
-        }
-      },
-      "load": {
-        "index": "index0",
-        "type": "type0",
-        "body": {
-          "dynamic": false,
-          "_parent": {
-            "type": "type1"
-          },
-          "properties": {
-            "property0": {
-              "type": "text",
-              "norms": false,
-              "analyzer": "ik_max_word",
-              "search_analyzer": "ik_smart"
-            },
-            "property1": {
-              "type": "keyword"
-            }
-          }
-        }
-      }
-    },
-    {
-      "from": {
         "phase": "tail",
-        "time": "2017-05-12T07:47:16.030Z"
+        "time": "2017-08-16T10:55:24.474Z"
       },
       "extract": {
-        "db": "db0",
-        "collection": "collection1",
+        "db": "jike",
+        "collection": "banners",
         "query": {},
         "projection": {
-          "field3": 1
+          "name": 1,
+          "shareCount.all": 1,
+          "deleted": 1
         }
       },
       "transform": {
         "mapping": {
-          "field3": "property3"
+          "name": "name",
+          "shareCount.all": "shareCount.all",
+          "deleted": "isDeleted"
         }
       },
       "load": {
-        "index": "index0",
-        "type": "type1",
+        "index": "banner",
+        "type": "banner",
         "body": {
           "dynamic": false,
           "properties": {
-            "property3": {
-              "type": "keyword"
+            "name": {
+              "type": "text",
+              "analyzer": "ik_max_word",
+              "search_analyzer": "ik_smart",
+              "fields": {
+                "exact": {
+                  "type": "keyword"
+                }
+              }
+            },
+            "shareCount.all": {
+              "type": "long"
+            },
+            "isDeleted": {
+              "type": "boolean"
             }
           }
         }
