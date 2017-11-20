@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -15,7 +15,8 @@
     "start": "node ./dist/src/main.js",
     "build": "rm -rf ./dist && tsc",
     "dev": "rm -rf ./dist && tsc -w & NODE_ENV=dev nodemon ./dist/src/main.js",
-    "test": "rm -rf ./dist && tsc && ava ./dist/test"
+    "test": "rm -rf ./dist && tsc && ava ./dist/test",
+    "prepublishOnly": "npm run build"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.com"
@@ -34,21 +35,19 @@
   },
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
-    "elasticsearch": "13.3.1",
+    "elasticsearch": "14.0.0",
     "lodash": "4.17.4",
-    "mongodb": "2.2.31",
+    "mongodb": "2.2.33",
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.16",
-    "@types/ioredis": "0.0.24",
-    "@types/lodash": "4.14.73",
-    "@types/mongodb": "2.2.10",
+    "@types/elasticsearch": "5.0.17",
+    "@types/lodash": "4.14.85",
+    "@types/mongodb": "2.2.15",
     "@types/rx": "4.1.1",
-    "ava": "0.22.0",
-    "ioredis": "3.1.4",
-    "nodemon": "1.11.0",
-    "source-map-support": "0.4.16",
-    "typescript": "2.4.2"
+    "ava": "0.23.0",
+    "nodemon": "1.12.1",
+    "source-map-support": "0.5.0",
+    "typescript": "2.6.1"
   }
 }

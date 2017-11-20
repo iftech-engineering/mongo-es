@@ -46,7 +46,7 @@ export default class Processor {
       return {
         action: 'delete',
         id: doc._id.toHexString(),
-        parent: this.task.transform.parent && get<string>(doc, this.task.transform.parent),
+        parent: this.task.transform.parent && get(doc, this.task.transform.parent),
       }
     }
     const data = reduce(this.task.transform.mapping, (obj, value, key) => {
@@ -62,7 +62,7 @@ export default class Processor {
       action: 'upsert',
       id: doc._id.toHexString(),
       data,
-      parent: this.task.transform.parent && get<string>(doc, this.task.transform.parent),
+      parent: this.task.transform.parent && get(doc, this.task.transform.parent),
     }
   }
 
