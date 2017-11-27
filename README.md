@@ -2,6 +2,8 @@
 
 A MongoDB to Elasticsearch connector
 
+[![CircleCI](https://circleci.com/gh/jike-engineering/mongo-es/tree/v3.svg?style=svg)](https://circleci.com/gh/jike-engineering/mongo-es/tree/v3)
+
 [![npm version](https://badge.fury.io/js/mongo-es.svg)](https://badge.fury.io/js/mongo-es)
 
 ## Installation
