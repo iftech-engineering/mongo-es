@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "2.0.2",
+  "version": "3.0.0-alpha.1",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -15,7 +15,7 @@
     "start": "node ./dist/src/main.js",
     "build": "rm -rf ./dist && tsc",
     "dev": "rm -rf ./dist && tsc -w & NODE_ENV=dev nodemon ./dist/src/main.js",
-    "test": "rm -rf ./dist && tsc && ava ./dist/test",
+    "test": "ava-ts test",
     "prepublishOnly": "npm run build"
   },
   "publishConfig": {
@@ -43,11 +43,13 @@
   "devDependencies": {
     "@types/elasticsearch": "5.0.17",
     "@types/lodash": "4.14.85",
-    "@types/mongodb": "2.2.15",
+    "@types/mongodb": "2.2.16",
     "@types/rx": "4.1.1",
     "ava": "0.23.0",
+    "ava-ts": "0.23.0",
     "nodemon": "1.12.1",
     "source-map-support": "0.5.0",
+    "ts-node": "3.3.0",
     "typescript": "2.6.1"
   }
 }
