@@ -67,12 +67,12 @@ export default class Elasticsearch {
         },
       }, (err, response: any) => {
         if (err) {
-          console.warn('search from elasticsearch', task.name(), id, err.message)
+          console.log('search from elasticsearch', task.name(), id, err.message)
           resolve(null)
           return
         }
         if (response.hits.total === 0) {
-          console.warn('search from elasticsearch', task.name(), id, 'not found')
+          console.log('search from elasticsearch', task.name(), id, 'not found')
           resolve(null)
           return
         }
@@ -95,7 +95,7 @@ export default class Elasticsearch {
         id: id.toHexString(),
       }, (err, response) => {
         if (err) {
-          console.warn('retrieve from elasticsearch', task.name(), id, err.message)
+          console.log('retrieve from elasticsearch', task.name(), id, err.message)
           resolve(null)
           return
         }
