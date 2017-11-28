@@ -86,7 +86,7 @@ export default class Processor {
     let ignore = true
     if (oplog.op === 'u') {
       _.forEach(this.task.transform.mapping, (value, key) => {
-        ignore = ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.has(oplog.o.$unset, key))
+        ignore = ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.get(oplog.o.$unset, key))
       })
     }
     return ignore
@@ -141,7 +141,7 @@ export default class Processor {
             console.debug('ignoreUpdate', oplog)
             return null
           }
-          if (_.keys(oplog.o).filter(key => key.startsWith('$')).length === 0) {
+          if (_.keys(oplog.o).find(key => !key.startsWith('$'))) {
             return this.transformer('upsert', {
               _id: oplog.o2._id,
               ...oplog.o,
