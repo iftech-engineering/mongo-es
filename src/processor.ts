@@ -70,13 +70,13 @@ export default class Processor {
     }
   }
 
-  applyUpdate(doc: Document, $set: any = {}, $unset: any = {}): Document {
+  applyUpdate(doc: Document, set: any = {}, unset: any = {}): Document {
     _.forEach(this.task.transform.mapping, (value, key) => {
-      if (_.has($unset, key)) {
+      if (_.get(unset, key)) {
         _.unset(doc, value)
       }
-      if (_.has($set, key)) {
-        _.set(doc, value, _.get($set, key))
+      if (_.has(set, key)) {
+        _.set(doc, value, _.get(set, key))
       }
     })
     return doc
@@ -216,23 +216,24 @@ export default class Processor {
     for (let oplog of _.sortBy(oplogs, 'ts')) {
       switch (oplog.op) {
         case 'i': {
-          store[oplog.o._id.toString()] = oplog
+          store[oplog.ns + oplog.o._id.toString()] = oplog
           break
         }
         case 'u': {
-          const doc = store[oplog.o2._id.toString()]
+          const doc = store[oplog.ns + oplog.o2._id.toString()]
           if (doc && doc.op === 'i') {
             doc.o = this.applyUpdate(doc.o as Document, oplog.o.$set, oplog.o.$unset)
             doc.ts = oplog.ts
-          } else if (doc.op === 'u') {
-            // TODO
+          } else if (doc && doc.op === 'u') {
+            doc.o = _.merge(doc.o, oplog.o)
+            doc.ts = oplog.ts
           } else {
-            store[oplog.o._id.toString()] = oplog
+            store[oplog.ns + oplog.o2._id.toString()] = oplog
           }
           break
         }
         case 'd': {
-          delete store[oplog.o._id.toString()]
+          delete store[oplog.ns + oplog.o._id.toString()]
           break
         }
       }
