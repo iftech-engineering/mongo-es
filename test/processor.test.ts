@@ -7,9 +7,6 @@ import Processor from '../src/processor'
 
 const oplog: OpLog = {
   "ts": new Timestamp(14, 1495012567),
-  "t": 21,
-  "h": 6069675571563967122,
-  "v": 2,
   "op": "u",
   "ns": "db0.collection0",
   "o2": {
