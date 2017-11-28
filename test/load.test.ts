@@ -1,9 +1,9 @@
 import test from 'ava'
 import { Client } from 'elasticsearch'
 
-import Processor from '../old/processor'
-import Elasticsearch from '../old/elasticsearch'
-import { Controls, Task } from '../old/config'
+import Processor from '../src/processor'
+import Elasticsearch from '../src/elasticsearch'
+import { Controls, Task } from '../src/config'
 
 const client = new Client({
   host: 'localhost:9200',
