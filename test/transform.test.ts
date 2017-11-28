@@ -1,10 +1,9 @@
-import 'source-map-support/register'
-
+import test from 'ava'
 import { ObjectID, Timestamp } from 'mongodb'
+
 import { OpLog, Document, IR } from '../src/types'
 import { Controls, Task } from '../src/config'
 import Processor from '../src/processor'
-import test from 'ava'
 
 const oplog: OpLog = {
   "ts": new Timestamp(14, 1495012567),

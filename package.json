@@ -15,7 +15,7 @@
     "start": "node ./dist/src/main.js",
     "build": "rm -rf ./dist && tsc",
     "dev": "rm -rf ./dist && tsc -w & NODE_ENV=dev nodemon ./dist/src/main.js",
-    "test": "rm -rf ./dist && tsc && ava ./dist/test",
+    "test": "ava-ts test",
     "prepublishOnly": "npm run build"
   },
   "publishConfig": {
@@ -41,13 +41,17 @@
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.17",
+    "@types/dockerode": "2.5.1",
+    "@types/elasticsearch": "5.0.18",
     "@types/lodash": "4.14.85",
-    "@types/mongodb": "2.2.15",
+    "@types/mongodb": "2.2.16",
     "@types/rx": "4.1.1",
-    "ava": "0.23.0",
+    "ava": "0.24.0",
+    "ava-ts": "0.23.0",
+    "dockerode": "2.5.3",
     "nodemon": "1.12.1",
     "source-map-support": "0.5.0",
+    "ts-node": "3.3.0",
     "typescript": "2.6.1"
   }
 }
