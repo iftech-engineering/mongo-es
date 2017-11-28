@@ -1,5 +1,6 @@
 import { parse, format } from 'url'
 import { Readable } from 'stream'
+import { keyBy } from 'lodash'
 
 import { Timestamp, Cursor, MongoClient, ObjectID, Collection } from 'mongodb'
 
@@ -77,29 +78,29 @@ export default class MongoDB {
       this.retrieveRunning = false
       return
     }
-    const transferredMedia = await this._retrieveBatchSafe(ids)
+    const docs = await this._retrieveBatchSafe(ids)
     ids.forEach((id) => {
       const cbs = this.retrieveBuffer[id]
       delete this.retrieveBuffer[id]
       cbs.forEach((cb) => {
-        cb(transferredMedia[id] || null)
+        cb(docs[id] || null)
       })
     })
     setTimeout(this._retrieve, 1000)
   }
 
-  async _retrieveBatchSafe(ids: string[]): Promise<Document[]> {
+  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
     try {
-      const docs = await this.collection.find({
+      const docs = await this.collection.find<Document>({
         _id: {
           $in: ids.map(ObjectID.createFromHexString),
         },
       }).toArray()
       console.debug('retrieve from mongodb', docs)
-      return docs
+      return keyBy(docs, doc => doc._id.toHexString())
     } catch (err) {
       console.warn('retrieve from mongodb', this.task.name(), ids, err)
-      return []
+      return {}
     }
   }
 }
