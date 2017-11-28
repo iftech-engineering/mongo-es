@@ -10,8 +10,10 @@ export default class MongoDB {
   collection: Collection
   oplog: Collection
   task: Task
+  retrieveBuffer: { [id: string]: Function[] } = {}
+  retrieveRunning: boolean = false
 
-  constructor(collection: Collection, oplog: Collection, task: Task) {
+  private constructor(collection: Collection, oplog: Collection, task: Task) {
     this.collection = collection
     this.oplog = oplog
     this.task = task
@@ -59,15 +61,45 @@ export default class MongoDB {
   }
 
   async retrieve(id: ObjectID): Promise<Document | null> {
-    try {
-      const doc = await this.collection.findOne({
-        _id: id,
+    return new Promise<Document | null>((resolve) => {
+      this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
+      this.retrieveBuffer[id.toHexString()].push(resolve)
+      if (!this.retrieveRunning) {
+        this.retrieveRunning = true
+        setTimeout(this._retrieve, 1000)
+      }
+    })
+  }
+
+  async _retrieve() {
+    const ids = Object.keys(this.retrieveBuffer)
+    if (ids.length === 0) {
+      this.retrieveRunning = false
+      return
+    }
+    const transferredMedia = await this._retrieveBatchSafe(ids)
+    ids.forEach((id) => {
+      const cbs = this.retrieveBuffer[id]
+      delete this.retrieveBuffer[id]
+      cbs.forEach((cb) => {
+        cb(transferredMedia[id] || null)
       })
-      console.debug('retrieve from mongodb', doc)
-      return doc
+    })
+    setTimeout(this._retrieve, 1000)
+  }
+
+  async _retrieveBatchSafe(ids: string[]): Promise<Document[]> {
+    try {
+      const docs = await this.collection.find({
+        _id: {
+          $in: ids.map(ObjectID.createFromHexString),
+        },
+      }).toArray()
+      console.debug('retrieve from mongodb', docs)
+      return docs
     } catch (err) {
-      console.warn('retrieve from mongodb', this.task.name(), id, err)
-      return null
+      console.warn('retrieve from mongodb', this.task.name(), ids, err)
+      return []
     }
   }
 }
