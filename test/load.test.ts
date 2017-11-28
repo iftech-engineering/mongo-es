@@ -2,9 +2,9 @@ import test from 'ava'
 import * as Docker from 'dockerode'
 import { Client } from 'elasticsearch'
 
-import Processor from '../src/processor'
-import Elasticsearch from '../src/elasticsearch'
-import { Controls, Task } from '../src/config'
+import Processor from '../old/processor'
+import Elasticsearch from '../old/elasticsearch'
+import { Controls, Task } from '../old/config'
 
 const docker = new Docker()
 const client = new Client({
