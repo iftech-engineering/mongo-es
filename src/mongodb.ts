@@ -1,7 +1,7 @@
 import { parse, format } from 'url'
 import { Readable } from 'stream'
 
-import { Timestamp, Cursor, Db, MongoClient, ObjectID } from 'mongodb'
+import { Timestamp, Cursor, Db, MongoClient, ObjectID, Collection } from 'mongodb'
 
 import { Document } from './types'
 import { Config, Task } from './config'
@@ -10,26 +10,28 @@ export default class MongoDB {
   dbs: {
     [name: string]: Db
   }
+  oplog: Collection
 
-  constructor(dbs: { [name: string]: Db }) {
+  constructor(dbs: { [name: string]: Db }, oplog: Collection) {
     this.dbs = dbs
+    this.oplog = oplog
   }
 
   static async init({ mongodb, tasks }: Config): Promise<MongoDB> {
-    const dbs = {}
     const url = parse(mongodb.url)
     url.pathname = `/local`
-    dbs['local'] = await MongoClient.connect(format(url), mongodb.options)
+    const oplog = (await MongoClient.connect(format(url), mongodb.options)).collection('oplog.rs')
+    const dbs = {}
     for (let task of tasks) {
       const url = parse(mongodb.url)
       url.pathname = `/${task.extract.db}`
       dbs[task.extract.db] = await MongoClient.connect(format(url), mongodb.options)
     }
-    return new MongoDB(dbs)
+    return new MongoDB(dbs, oplog)
   }
 
   getOplog(task: Task): Cursor {
-    return this.dbs['local'].collection('oplog.rs')
+    return this.oplog
       .find({
         ns: `${task.extract.db}.${task.extract.collection}`,
         ts: {
