@@ -115,3 +115,47 @@ test('ignoreUpdate false', t => {
   const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.is(processor.ignoreUpdate(oplog), false)
 })
+
+test('mergeOplogs insert then update', t => {
+  const processor = new Processor({
+    transform: {
+      mapping: {
+        "field0": "field0",
+        "field1": "field1",
+      },
+    },
+  } as any, new Controls({}), null as any, null as any)
+  const oplogs = processor.mergeOplogs([{
+    ts: new Timestamp(0, 0),
+    op: 'i',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      field0: 0,
+    },
+  }, {
+    ts: new Timestamp(0, 1),
+    op: 'u',
+    ns: 'example1',
+    o: {
+      $set: {
+        field1: 1,
+      },
+      $unset: {
+        field0: 1,
+      },
+    },
+    o2: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }])
+  t.deepEqual(oplogs, [{
+    ts: new Timestamp(0, 1),
+    op: 'i',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      field1: 1,
+    },
+  }])
+})

@@ -34,22 +34,23 @@ export type OplogDelete = {
 
 export type OpLog = {
   ts: Timestamp
-  t: number
-  h: number
-  v: number
   ns: string
   fromMigrate?: boolean
 } & (OplogInsert | OplogUpdate | OplogDelete)
 
-export type IR = {
+export type IRUpsert = {
   action: 'upsert'
   id: string
   parent?: string
   data: {
     [key: string]: any
   }
-} | {
+}
+
+export type IRDelete = {
   action: 'delete'
   id: string
   parent?: string
 }
+
+export type IR = IRUpsert | IRDelete

@@ -211,6 +211,35 @@ export default class Processor {
     return await this.elasticsearch.bulk({ body })
   }
 
+  mergeOplogs(oplogs: OpLog[]): OpLog[] {
+    const store: { [key: string]: OpLog } = {}
+    for (let oplog of _.sortBy(oplogs, 'ts')) {
+      switch (oplog.op) {
+        case 'i': {
+          store[oplog.o._id.toString()] = oplog
+          break
+        }
+        case 'u': {
+          const doc = store[oplog.o2._id.toString()]
+          if (doc && doc.op === 'i') {
+            doc.o = this.applyUpdate(doc.o as Document, oplog.o.$set, oplog.o.$unset)
+            doc.ts = oplog.ts
+          } else if (doc.op === 'u') {
+            // TODO
+          } else {
+            store[oplog.o._id.toString()] = oplog
+          }
+          break
+        }
+        case 'd': {
+          delete store[oplog.o._id.toString()]
+          break
+        }
+      }
+    }
+    return _.sortBy(_.map(store, oplog => oplog), 'ts')
+  }
+
   async scanDocument(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.scan()
@@ -237,11 +266,11 @@ export default class Processor {
   async tailOpLog(): Promise<never> {
     return new Promise<never>((resolve) => {
       this.tail()
-        .bufferWithTimeOrCount(1000, 50)
-        .flatMap((logs) => {
+        .bufferWithTimeOrCount(1000, 500)
+        .flatMap((oplogs) => {
           return Observable.create<IR>(async (observer) => {
-            for (let log of logs) {
-              const ir = await this.oplog(log)
+            for (let oplog of this.mergeOplogs(oplogs)) {
+              const ir = await this.oplog(oplog)
               if (ir) {
                 observer.onNext(ir)
               }
