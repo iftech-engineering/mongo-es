@@ -6,14 +6,14 @@ import { Config, Task } from './config'
 export async function run(config: Config): Promise<void> {
   // init mongodb and elasticsearch connection
   console.log('run', new Date())
-  await MongoDB.init(config)
-  await Elasticsearch.init(config)
+  const mongodb = await MongoDB.init(config)
+  const elasticsearch = await Elasticsearch.init(config)
 
   // check and create indices
   for (let index of config.elasticsearch.indices) {
     index.index += config.controls.indexNameSuffix
-    if (!await Elasticsearch.exists(index)) {
-      await Elasticsearch.create(index)
+    if (!await elasticsearch.exists(index)) {
+      await elasticsearch.create(index)
       console.log('create index', index.index)
     }
   }
@@ -21,7 +21,7 @@ export async function run(config: Config): Promise<void> {
   // put mappings
   for (let task of config.tasks) {
     task.load.index += config.controls.indexNameSuffix
-    await Elasticsearch.putMapping(task.load)
+    await elasticsearch.putMapping(task.load)
     console.log('put mapping', task.load.index, task.load.type)
   }
 
@@ -36,7 +36,7 @@ export async function run(config: Config): Promise<void> {
 
   // run tasks
   await Promise.all(config.tasks.map(async (task) => {
-    const processor = new Processor(task, config.controls)
+    const processor = new Processor(task, config.controls, mongodb, elasticsearch)
     if (task.from.phase === 'scan') {
       try {
         console.log('scan', task.name(), 'from', task.from.id)

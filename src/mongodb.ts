@@ -7,30 +7,31 @@ import { Document } from './types'
 import { Config, Task } from './config'
 
 export default class MongoDB {
-  private static dbs: {
+  private dbs: {
     [name: string]: Db
   }
 
-  private constructor() {
+  private constructor(dbs: {
+    [name: string]: Db
+  }) {
+    this.dbs = dbs
   }
 
-  public static async init({ mongodb, tasks }: Config): Promise<void> {
-    if (MongoDB.dbs) {
-      return
-    }
-    MongoDB.dbs = {}
+  public static async init({ mongodb, tasks }: Config): Promise<MongoDB> {
+    const dbs = {}
     const url = parse(mongodb.url)
     url.pathname = `/local`
-    MongoDB.dbs['local'] = await MongoClient.connect(format(url), mongodb.options)
+    dbs['local'] = await MongoClient.connect(format(url), mongodb.options)
     for (let task of tasks) {
       const url = parse(mongodb.url)
       url.pathname = `/${task.extract.db}`
-      MongoDB.dbs[task.extract.db] = await MongoClient.connect(format(url), mongodb.options)
+      dbs[task.extract.db] = await MongoClient.connect(format(url), mongodb.options)
     }
+    return new MongoDB(dbs)
   }
 
-  public static getOplog(task: Task): Cursor {
-    return MongoDB.dbs['local'].collection('oplog.rs')
+  public getOplog(task: Task): Cursor {
+    return this.dbs['local'].collection('oplog.rs')
       .find({
         ns: `${task.extract.db}.${task.extract.collection}`,
         ts: {
@@ -47,8 +48,8 @@ export default class MongoDB {
       })
   }
 
-  public static getCollection(task: Task): Readable {
-    return MongoDB.dbs[task.extract.db].collection(task.extract.collection)
+  public getCollection(task: Task): Readable {
+    return this.dbs[task.extract.db].collection(task.extract.collection)
       .find({
         ...task.extract.query,
         _id: {
@@ -62,9 +63,9 @@ export default class MongoDB {
       .stream()
   }
 
-  public static async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
+  public async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
     try {
-      const doc = await MongoDB.dbs[task.extract.db].collection(task.extract.collection).findOne({
+      const doc = await this.dbs[task.extract.db].collection(task.extract.collection).findOne({
         _id: id,
       })
       console.debug('retrieve from mongodb', doc)

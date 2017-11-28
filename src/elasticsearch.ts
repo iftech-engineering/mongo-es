@@ -11,53 +11,51 @@ import { Document } from './types'
 import { Config, Task } from './config'
 
 export default class Elasticsearch {
-  private static client: Client
+  private client: Client
 
-  private constructor() {
+  private constructor(client: Client) {
+    this.client = client
   }
 
-  public static async init({ elasticsearch }: Config): Promise<void> {
-    if (Elasticsearch.client) {
-      return
-    }
-    Elasticsearch.client = new Client(elasticsearch.options)
+  public static async init({ elasticsearch }: Config): Promise<Elasticsearch> {
+    return new Elasticsearch(new Client(elasticsearch.options))
   }
 
-  public static async create(params: IndicesCreateParams): Promise<void> {
+  public async create(params: IndicesCreateParams): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      Elasticsearch.client.indices.create(params, (err, response) => {
+      this.client.indices.create(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
   }
 
-  public static async putMapping(params: IndicesPutMappingParams): Promise<void> {
+  public async putMapping(params: IndicesPutMappingParams): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      Elasticsearch.client.indices.putMapping(params, (err, response) => {
+      this.client.indices.putMapping(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
   }
 
-  public static async exists(params: IndicesExistsParams): Promise<boolean> {
+  public async exists(params: IndicesExistsParams): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-      Elasticsearch.client.indices.exists(params, (err, response) => {
+      this.client.indices.exists(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
   }
 
-  public static async bulk(params: BulkIndexDocumentsParams): Promise<void> {
+  public async bulk(params: BulkIndexDocumentsParams): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      Elasticsearch.client.bulk(params, (err, response) => {
+      this.client.bulk(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
   }
 
-  public static async search(task: Task, id: ObjectID): Promise<Document | null> {
+  public async search(task: Task, id: ObjectID): Promise<Document | null> {
     return new Promise<Document | null>((resolve) => {
-      Elasticsearch.client.search<Document>({
+      this.client.search<Document>({
         index: task.load.index,
         type: task.load.type,
         body: {
@@ -89,9 +87,9 @@ export default class Elasticsearch {
     })
   }
 
-  public static async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
+  public async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
     return new Promise<Document | null>((resolve) => {
-      Elasticsearch.client.get<Document>({
+      this.client.get<Document>({
         index: task.load.index as string,
         type: task.load.type,
         id: id.toHexString(),

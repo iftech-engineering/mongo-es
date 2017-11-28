@@ -61,7 +61,7 @@ const doc: Document = {
 }
 
 test('transformer create', t => {
-  const processor = new Processor(task, new Controls({}))
+  const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(processor.transformer('upsert', doc), <IR>{
     action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
@@ -76,7 +76,7 @@ test('transformer create', t => {
 })
 
 test('transformer update', t => {
-  const processor = new Processor(task, new Controls({}))
+  const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(processor.transformer('upsert', doc), <IR>{
     action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
@@ -91,7 +91,7 @@ test('transformer update', t => {
 })
 
 test('transformer delete', t => {
-  const processor = new Processor(task, new Controls({}))
+  const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(processor.transformer('delete', doc), <IR>{
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
@@ -100,7 +100,7 @@ test('transformer delete', t => {
 })
 
 test('applyUpdate', t => {
-  const transform = new Processor(task, new Controls({}))
+  const transform = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(transform.applyUpdate(doc, oplog.o.$set, oplog.o.$unset), {
     _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
     field0: {
@@ -110,11 +110,11 @@ test('applyUpdate', t => {
 })
 
 test('ignoreUpdate true', t => {
-  const processor = new Processor(task2, new Controls({}))
+  const processor = new Processor(task2, new Controls({}), null as any, null as any)
   t.is(processor.ignoreUpdate(oplog), true)
 })
 
 test('ignoreUpdate false', t => {
-  const processor = new Processor(task, new Controls({}))
+  const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.is(processor.ignoreUpdate(oplog), false)
 })
