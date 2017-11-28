@@ -41,14 +41,12 @@
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/dockerode": "2.5.1",
     "@types/elasticsearch": "5.0.18",
     "@types/lodash": "4.14.85",
     "@types/mongodb": "2.2.16",
     "@types/rx": "4.1.1",
     "ava": "0.24.0",
     "ava-ts": "0.23.0",
-    "dockerode": "2.5.3",
     "nodemon": "1.12.1",
     "source-map-support": "0.5.0",
     "ts-node": "3.3.0",

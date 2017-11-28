@@ -1,12 +1,10 @@
 import test from 'ava'
-import * as Docker from 'dockerode'
 import { Client } from 'elasticsearch'
 
 import Processor from '../old/processor'
 import Elasticsearch from '../old/elasticsearch'
 import { Controls, Task } from '../old/config'
 
-const docker = new Docker()
 const client = new Client({
   host: 'localhost:9200',
 })
@@ -29,6 +27,11 @@ const task: Task = new Task({
 })
 
 test('load', async t => {
+  await Elasticsearch.init({
+    elasticsearch: {
+      host: 'localhost:9200',
+    },
+  } as any)
   const processor = new Processor(task, new Controls({}))
   await processor.load([{
     action: 'upsert',
@@ -61,54 +64,14 @@ test('load', async t => {
   })
 })
 
-let container: Docker.Container
-
-test.before.cb('start elasticsearch', t => {
-  docker.createContainer({
-    Image: 'docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.0',
-    Env: ['discovery.type=single-node'],
-    HostConfig: {
-      PortBindings: {
-        '9200/tcp': [
-          {
-            HostPort: '9200',
-          },
-        ],
-        '9300/tcp': [
-          {
-            HostPort: '9300',
-          },
-        ],
-      },
-    },
-  }, function (err, c) {
-    if (err || !c) {
-      t.fail(err)
-    } else {
-      container = c
-      c.start(function (err, data) {
-        if (err) {
-          t.fail(err)
-        } else {
-          // waiting es start
-          setTimeout(async () => {
-            await Elasticsearch.init({
-              elasticsearch: {
-                host: 'localhost:9200',
-              },
-            } as any)
-            t.end()
-          }, 10000)
-        }
-      })
-    }
+test.before('create index', t => {
+  return client.indices.create({
+    index: 'test',
   })
 })
 
-test.after.always.cb('stop elasticsearch', t => {
-  t.notThrows(async () => {
-    await container.stop()
-    await container.remove()
-    t.end()
+test.after.always('delete index', t => {
+  return client.indices.delete({
+    index: 'test'
   })
 })
