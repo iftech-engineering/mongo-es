@@ -6,7 +6,7 @@ export default class Indices {
   client: Client
 
   private constructor(elasticsearch: ElasticsearchConfig) {
-    this.client = new Client(elasticsearch.options)
+    this.client = new Client({ ...elasticsearch.options })
   }
 
   static async init(config: Config): Promise<void> {

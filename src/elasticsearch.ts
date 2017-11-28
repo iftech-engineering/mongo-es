@@ -9,7 +9,7 @@ export default class Elasticsearch {
   task: Task
 
   constructor(elasticsearch: ElasticsearchConfig, task: Task) {
-    this.client = new Client(elasticsearch.options)
+    this.client = new Client({ ...elasticsearch.options })
     this.task = task
   }
 
