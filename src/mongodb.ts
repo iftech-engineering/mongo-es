@@ -24,6 +24,7 @@ export default class MongoDB {
     const url = parse(mongodb.url)
     url.pathname = `/${task.extract.db}`
     const collection = (await MongoClient.connect(format(url), mongodb.options)).collection(task.extract.collection)
+    url.pathname = '/local'
     const oplog = (await MongoClient.connect(format(url), mongodb.options)).collection('oplog.rs')
     return new MongoDB(collection, oplog, task)
   }
