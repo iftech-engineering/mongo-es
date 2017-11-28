@@ -1,7 +1,7 @@
 import { Readable } from 'stream'
 
 import { Observable } from 'rx'
-import * as _ from 'lodash'
+import { forEach, size, get, set, unset, has, keys, compact, map, reduce, isEmpty } from 'lodash'
 
 import { Task, Controls, CheckPoint } from './config'
 import { IR, Document, OpLog } from './types'
@@ -50,33 +50,33 @@ export default class Processor {
       return {
         action: 'delete',
         id: doc._id.toHexString(),
-        parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
+        parent: this.task.transform.parent && get(doc, this.task.transform.parent),
       }
     }
-    const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
-      if (_.has(doc, key)) {
-        _.set(obj, value, _.get(doc, key))
+    const data = reduce(this.task.transform.mapping, (obj, value, key) => {
+      if (has(doc, key)) {
+        set(obj, value, get(doc, key))
       }
       return obj
     }, {})
-    if (_.isEmpty(data)) {
+    if (isEmpty(data)) {
       return null
     }
     return {
       action: 'upsert',
       id: doc._id.toHexString(),
       data,
-      parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
+      parent: this.task.transform.parent && get(doc, this.task.transform.parent),
     }
   }
 
   applyUpdate(doc: Document, $set: any = {}, $unset: any = {}): Document {
-    _.forEach(this.task.transform.mapping, (value, key) => {
-      if (_.has($unset, key)) {
-        _.unset(doc, value)
+    forEach(this.task.transform.mapping, (value, key) => {
+      if (has($unset, key)) {
+        unset(doc, value)
       }
-      if (_.has($set, key)) {
-        _.set(doc, value, _.get($set, key))
+      if (has($set, key)) {
+        set(doc, value, get($set, key))
       }
     })
     return doc
@@ -85,8 +85,8 @@ export default class Processor {
   ignoreUpdate(oplog: OpLog): boolean {
     let ignore = true
     if (oplog.op === 'u') {
-      _.forEach(this.task.transform.mapping, (value, key) => {
-        ignore = ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.has(oplog.o.$unset, key))
+      forEach(this.task.transform.mapping, (value, key) => {
+        ignore = ignore && !(has(oplog.o, key) || has(oplog.o.$set, key) || has(oplog.o.$unset, key))
       })
     }
     return ignore
@@ -133,15 +133,15 @@ export default class Processor {
           return this.transformer('upsert', oplog.o)
         }
         case 'u': {
-          if (_.size(oplog.o2) !== 1 || !oplog.o2._id) {
-            console.log('oplog', 'cannot transform', oplog)
+          if (size(oplog.o2) !== 1 || !oplog.o2._id) {
+            console.warn('oplog', 'cannot transform', oplog)
             return null
           }
           if (this.ignoreUpdate(oplog)) {
             console.debug('ignoreUpdate', oplog)
             return null
           }
-          if (_.keys(oplog.o).filter(key => key.startsWith('$')).length === 0) {
+          if (keys(oplog.o).filter(key => key.startsWith('$')).length === 0) {
             return this.transformer('upsert', {
               _id: oplog.o2._id,
               ...oplog.o,
@@ -156,8 +156,8 @@ export default class Processor {
           return doc ? this.transformer('upsert', doc) : null
         }
         case 'd': {
-          if (_.size(oplog.o) !== 1 || !oplog.o._id) {
-            console.log('oplog', 'cannot transform', oplog)
+          if (size(oplog.o) !== 1 || !oplog.o._id) {
+            console.warn('oplog', 'cannot transform', oplog)
             return null
           }
           const doc = this.task.transform.parent
@@ -215,7 +215,7 @@ export default class Processor {
     return new Promise<void>((resolve, reject) => {
       this.scan()
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .map(docs => _.compact<IR>(_.map(docs, doc => this.transformer('upsert', doc))))
+        .map(docs => compact<IR>(map(docs, doc => this.transformer('upsert', doc))))
         .subscribe(async (irs) => {
           if (irs.length === 0) {
             return
@@ -228,7 +228,7 @@ export default class Processor {
             }))
             console.log('scan', this.task.name(), irs.length, irs[0].id)
           } catch (err) {
-            console.log('scan', this.task.name(), err.message)
+            console.warn('scan', this.task.name(), err.message)
           }
         }, reject, resolve)
     })
@@ -261,7 +261,7 @@ export default class Processor {
             }))
             console.log('tail', this.task.name(), irs.length)
           } catch (err) {
-            console.log('tail', this.task.name(), err.message)
+            console.warn('tail', this.task.name(), err.message)
           }
         }, (err) => {
           console.error('tail', this.task.name(), err)

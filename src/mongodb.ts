@@ -71,7 +71,7 @@ export default class MongoDB {
       console.debug('retrieve from mongodb', doc)
       return doc
     } catch (err) {
-      console.log('retrieve from mongodb', task.name(), id, err)
+      console.warn('retrieve from mongodb', task.name(), id, err)
       return null
     }
   }
