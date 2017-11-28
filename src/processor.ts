@@ -95,7 +95,7 @@ export default class Processor {
   scan(): Observable<Document> {
     return Observable.create<Document>((observer) => {
       try {
-        const stream = Processor.controlReadCapacity(this.mongodb.getCollection(this.task))
+        const stream = Processor.controlReadCapacity(this.mongodb.getCollection())
         stream.addListener('data', (doc: Document) => {
           observer.onNext(doc)
         })
@@ -114,7 +114,7 @@ export default class Processor {
   tail(): Observable<OpLog> {
     return Observable.create<OpLog>((observer) => {
       try {
-        const cursor = this.mongodb.getOplog(this.task)
+        const cursor = this.mongodb.getOplog()
         cursor.forEach((log: OpLog) => {
           observer.onNext(log)
         }, () => {
@@ -148,11 +148,11 @@ export default class Processor {
             })
           }
           const old = this.task.transform.parent
-            ? await this.elasticsearch.search(this.task, oplog.o2._id)
-            : await this.elasticsearch.retrieve(this.task, oplog.o2._id)
+            ? await this.elasticsearch.search(oplog.o2._id)
+            : await this.elasticsearch.retrieve(oplog.o2._id)
           const doc = old
             ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset)
-            : await this.mongodb.retrieve(this.task, oplog.o2._id)
+            : await this.mongodb.retrieve(oplog.o2._id)
           return doc ? this.transformer('upsert', doc) : null
         }
         case 'd': {
@@ -161,7 +161,7 @@ export default class Processor {
             return null
           }
           const doc = this.task.transform.parent
-            ? await this.elasticsearch.search(this.task, oplog.o._id)
+            ? await this.elasticsearch.search(oplog.o._id)
             : oplog.o
           console.debug(doc)
           return doc ? this.transformer('delete', doc) : null

@@ -1,48 +1,16 @@
-import {
-  Client,
-  IndicesCreateParams,
-  IndicesPutMappingParams,
-  IndicesExistsParams,
-  BulkIndexDocumentsParams,
-} from 'elasticsearch'
+import { Client, BulkIndexDocumentsParams } from 'elasticsearch'
 import { ObjectID } from 'mongodb'
 
 import { Document } from './types'
-import { Config, Task } from './config'
+import { ElasticsearchConfig, Task } from './config'
 
 export default class Elasticsearch {
   client: Client
+  task: Task
 
-  constructor(client: Client) {
-    this.client = client
-  }
-
-  static async init({ elasticsearch }: Config): Promise<Elasticsearch> {
-    return new Elasticsearch(new Client(elasticsearch.options))
-  }
-
-  async create(params: IndicesCreateParams): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.client.indices.create(params, (err, response) => {
-        err ? reject(err) : resolve(response)
-      })
-    })
-  }
-
-  async putMapping(params: IndicesPutMappingParams): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.client.indices.putMapping(params, (err, response) => {
-        err ? reject(err) : resolve(response)
-      })
-    })
-  }
-
-  async exists(params: IndicesExistsParams): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
-      this.client.indices.exists(params, (err, response) => {
-        err ? reject(err) : resolve(response)
-      })
-    })
+  constructor(elasticsearch: ElasticsearchConfig, task: Task) {
+    this.client = new Client(elasticsearch.options)
+    this.task = task
   }
 
   async bulk(params: BulkIndexDocumentsParams): Promise<void> {
@@ -53,11 +21,11 @@ export default class Elasticsearch {
     })
   }
 
-  async search(task: Task, id: ObjectID): Promise<Document | null> {
+  async search(id: ObjectID): Promise<Document | null> {
     return new Promise<Document | null>((resolve) => {
       this.client.search<Document>({
-        index: task.load.index,
-        type: task.load.type,
+        index: this.task.load.index,
+        type: this.task.load.type,
         body: {
           query: {
             term: {
@@ -67,35 +35,35 @@ export default class Elasticsearch {
         },
       }, (err, response: any) => {
         if (err) {
-          console.warn('search from elasticsearch', task.name(), id, err.message)
+          console.warn('search from elasticsearch', this.task.name(), id, err.message)
           resolve(null)
           return
         }
         if (response.hits.total === 0) {
-          console.warn('search from elasticsearch', task.name(), id, 'not found')
+          console.warn('search from elasticsearch', this.task.name(), id, 'not found')
           resolve(null)
           return
         }
         console.debug('search from elasticsearch', response)
         const doc = response.hits.hits[0]._source
         doc._id = new ObjectID(response.hits.hits[0]._id)
-        if (task.transform.parent && response.hits.hits[0]._parent) {
-          doc[task.transform.parent] = new ObjectID(response.hits.hits[0]._parent)
+        if (this.task.transform.parent && response.hits.hits[0]._parent) {
+          doc[this.task.transform.parent] = new ObjectID(response.hits.hits[0]._parent)
         }
         resolve(doc)
       })
     })
   }
 
-  async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
+  async retrieve(id: ObjectID): Promise<Document | null> {
     return new Promise<Document | null>((resolve) => {
       this.client.get<Document>({
-        index: task.load.index as string,
-        type: task.load.type,
+        index: this.task.load.index as string,
+        type: this.task.load.type,
         id: id.toHexString(),
       }, (err, response) => {
         if (err) {
-          console.warn('retrieve from elasticsearch', task.name(), id, err.message)
+          console.warn('retrieve from elasticsearch', this.task.name(), id, err.message)
           resolve(null)
           return
         }

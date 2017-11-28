@@ -27,11 +27,12 @@ const task: Task = new Task({
 })
 
 test('load', async t => {
-  const elasticsearch = await Elasticsearch.init({
-    elasticsearch: {
+  const elasticsearch = new Elasticsearch({
+    options: {
       host: 'localhost:9200',
     },
-  } as any)
+    indices: [],
+  }, task)
   const processor = new Processor(task, new Controls({}), null as any, elasticsearch)
   await processor.load([{
     action: 'upsert',

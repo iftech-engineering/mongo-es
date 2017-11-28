@@ -1,41 +1,51 @@
 import { parse, format } from 'url'
 import { Readable } from 'stream'
 
-import { Timestamp, Cursor, Db, MongoClient, ObjectID, Collection } from 'mongodb'
+import { Timestamp, Cursor, MongoClient, ObjectID, Collection } from 'mongodb'
 
 import { Document } from './types'
-import { Config, Task } from './config'
+import { Task, MongoConfig } from './config'
 
 export default class MongoDB {
-  dbs: {
-    [name: string]: Db
-  }
+  collection: Collection
   oplog: Collection
+  task: Task
 
-  constructor(dbs: { [name: string]: Db }, oplog: Collection) {
-    this.dbs = dbs
+  constructor(collection: Collection, oplog: Collection, task: Task) {
+    this.collection = collection
     this.oplog = oplog
+    this.task = task
   }
 
-  static async init({ mongodb, tasks }: Config): Promise<MongoDB> {
+  static async init(mongodb: MongoConfig, task: Task): Promise<MongoDB> {
     const url = parse(mongodb.url)
-    url.pathname = `/local`
+    url.pathname = `/${task.extract.db}`
+    const collection = (await MongoClient.connect(format(url), mongodb.options)).collection(task.extract.collection)
     const oplog = (await MongoClient.connect(format(url), mongodb.options)).collection('oplog.rs')
-    const dbs = {}
-    for (let task of tasks) {
-      const url = parse(mongodb.url)
-      url.pathname = `/${task.extract.db}`
-      dbs[task.extract.db] = await MongoClient.connect(format(url), mongodb.options)
-    }
-    return new MongoDB(dbs, oplog)
+    return new MongoDB(collection, oplog, task)
   }
 
-  getOplog(task: Task): Cursor {
+  getCollection(): Readable {
+    return this.collection
+      .find({
+        ...this.task.extract.query,
+        _id: {
+          $lte: this.task.from.id,
+        },
+      })
+      .project(this.task.extract.projection)
+      .sort({
+        $natural: -1,
+      })
+      .stream()
+  }
+
+  getOplog(): Cursor {
     return this.oplog
       .find({
-        ns: `${task.extract.db}.${task.extract.collection}`,
+        ns: `${this.task.extract.db}.${this.task.extract.collection}`,
         ts: {
-          $gte: new Timestamp(0, task.from.time.getTime() / 1000),
+          $gte: new Timestamp(0, this.task.from.time.getTime() / 1000),
         },
         fromMigrate: {
           $exists: false,
@@ -48,30 +58,15 @@ export default class MongoDB {
       })
   }
 
-  getCollection(task: Task): Readable {
-    return this.dbs[task.extract.db].collection(task.extract.collection)
-      .find({
-        ...task.extract.query,
-        _id: {
-          $lte: task.from.id,
-        },
-      })
-      .project(task.extract.projection)
-      .sort({
-        $natural: -1,
-      })
-      .stream()
-  }
-
-  async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
+  async retrieve(id: ObjectID): Promise<Document | null> {
     try {
-      const doc = await this.dbs[task.extract.db].collection(task.extract.collection).findOne({
+      const doc = await this.collection.findOne({
         _id: id,
       })
       console.debug('retrieve from mongodb', doc)
       return doc
     } catch (err) {
-      console.warn('retrieve from mongodb', task.name(), id, err)
+      console.warn('retrieve from mongodb', this.task.name(), id, err)
       return null
     }
   }
