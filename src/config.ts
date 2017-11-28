@@ -63,8 +63,8 @@ export class Task {
   extract: ExtractTask
   transform: TransformTask
   load: LoadTask
-  private static onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>
-  private static onLoadCallback: (name: string) => Promise<any | null>
+  static onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>
+  static onLoadCallback: (name: string) => Promise<any | null>
 
   constructor({ from, extract, transform, load }) {
     this.from = new CheckPoint(from)
@@ -73,26 +73,26 @@ export class Task {
     this.load = load
   }
 
-  public name(): string {
+  name(): string {
     return `${this.extract.db}.${this.extract.collection}___${this.load.index}.${this.load.type}`
   }
 
-  public async endScan(time: Date): Promise<void> {
+  async endScan(time: Date): Promise<void> {
     this.from.phase = 'tail'
     this.from.time = time
     delete this.from.id
     await Task.saveCheckpoint(this.name(), this.from)
   }
 
-  public static onSaveCheckpoint(onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>) {
+  static onSaveCheckpoint(onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>) {
     Task.onSaveCallback = onSaveCallback
   }
 
-  public static onLoadCheckpoint(onLoadCallback: (name: string) => Promise<any | null>) {
+  static onLoadCheckpoint(onLoadCallback: (name: string) => Promise<any | null>) {
     Task.onLoadCallback = onLoadCallback
   }
 
-  public static async saveCheckpoint(name: string, checkPoint: CheckPoint): Promise<void> {
+  static async saveCheckpoint(name: string, checkPoint: CheckPoint): Promise<void> {
     if (Task.onSaveCallback && Task.onSaveCallback instanceof Function) {
       try {
         await Task.onSaveCallback(name, checkPoint)
@@ -102,7 +102,7 @@ export class Task {
     }
   }
 
-  public static async loadCheckpoint(name: string): Promise<CheckPoint | null> {
+  static async loadCheckpoint(name: string): Promise<CheckPoint | null> {
     try {
       if (Task.onLoadCallback && Task.onLoadCallback instanceof Function) {
         const obj = await Task.onLoadCallback(name)

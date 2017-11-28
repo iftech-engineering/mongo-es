@@ -7,17 +7,15 @@ import { Document } from './types'
 import { Config, Task } from './config'
 
 export default class MongoDB {
-  private dbs: {
+  dbs: {
     [name: string]: Db
   }
 
-  private constructor(dbs: {
-    [name: string]: Db
-  }) {
+  constructor(dbs: { [name: string]: Db }) {
     this.dbs = dbs
   }
 
-  public static async init({ mongodb, tasks }: Config): Promise<MongoDB> {
+  static async init({ mongodb, tasks }: Config): Promise<MongoDB> {
     const dbs = {}
     const url = parse(mongodb.url)
     url.pathname = `/local`
@@ -30,7 +28,7 @@ export default class MongoDB {
     return new MongoDB(dbs)
   }
 
-  public getOplog(task: Task): Cursor {
+  getOplog(task: Task): Cursor {
     return this.dbs['local'].collection('oplog.rs')
       .find({
         ns: `${task.extract.db}.${task.extract.collection}`,
@@ -48,7 +46,7 @@ export default class MongoDB {
       })
   }
 
-  public getCollection(task: Task): Readable {
+  getCollection(task: Task): Readable {
     return this.dbs[task.extract.db].collection(task.extract.collection)
       .find({
         ...task.extract.query,
@@ -63,7 +61,7 @@ export default class MongoDB {
       .stream()
   }
 
-  public async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
+  async retrieve(task: Task, id: ObjectID): Promise<Document | null> {
     try {
       const doc = await this.dbs[task.extract.db].collection(task.extract.collection).findOne({
         _id: id,

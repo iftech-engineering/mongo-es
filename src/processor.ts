@@ -9,12 +9,12 @@ import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
 
 export default class Processor {
-  private static provisionedReadCapacity: number
-  private static consumedReadCapacity: number
-  private task: Task
-  private controls: Controls
-  private mongodb: MongoDB
-  private elasticsearch: Elasticsearch
+  static provisionedReadCapacity: number
+  static consumedReadCapacity: number
+  task: Task
+  controls: Controls
+  mongodb: MongoDB
+  elasticsearch: Elasticsearch
 
   constructor(task: Task, controls: Controls, mongodb: MongoDB, elasticsearch: Elasticsearch) {
     this.task = task
@@ -25,7 +25,7 @@ export default class Processor {
     Processor.consumedReadCapacity = 0
   }
 
-  private static controlReadCapacity(stream: Readable): Readable {
+  static controlReadCapacity(stream: Readable): Readable {
     if (!Processor.provisionedReadCapacity) {
       return stream
     }
@@ -45,7 +45,7 @@ export default class Processor {
     return stream
   }
 
-  public transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
+  transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
@@ -70,7 +70,7 @@ export default class Processor {
     }
   }
 
-  public applyUpdate(doc: Document, $set: any = {}, $unset: any = {}): Document {
+  applyUpdate(doc: Document, $set: any = {}, $unset: any = {}): Document {
     forEach(this.task.transform.mapping, (value, key) => {
       if (has($unset, key)) {
         unset(doc, value)
@@ -82,7 +82,7 @@ export default class Processor {
     return doc
   }
 
-  public ignoreUpdate(oplog: OpLog): boolean {
+  ignoreUpdate(oplog: OpLog): boolean {
     let ignore = true
     if (oplog.op === 'u') {
       forEach(this.task.transform.mapping, (value, key) => {
@@ -92,7 +92,7 @@ export default class Processor {
     return ignore
   }
 
-  public scan(): Observable<Document> {
+  scan(): Observable<Document> {
     return Observable.create<Document>((observer) => {
       try {
         const stream = Processor.controlReadCapacity(this.mongodb.getCollection(this.task))
@@ -111,7 +111,7 @@ export default class Processor {
     })
   }
 
-  public tail(): Observable<OpLog> {
+  tail(): Observable<OpLog> {
     return Observable.create<OpLog>((observer) => {
       try {
         const cursor = this.mongodb.getOplog(this.task)
@@ -126,7 +126,7 @@ export default class Processor {
     })
   }
 
-  public async oplog(oplog: OpLog): Promise<IR | null> {
+  async oplog(oplog: OpLog): Promise<IR | null> {
     try {
       switch (oplog.op) {
         case 'i': {
@@ -176,7 +176,7 @@ export default class Processor {
     }
   }
 
-  public async load(irs: IR[]): Promise<void> {
+  async load(irs: IR[]): Promise<void> {
     if (irs.length === 0) {
       return
     }
@@ -211,7 +211,7 @@ export default class Processor {
     return await this.elasticsearch.bulk({ body })
   }
 
-  public async scanDocument(): Promise<void> {
+  async scanDocument(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.scan()
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
@@ -234,7 +234,7 @@ export default class Processor {
     })
   }
 
-  public async tailOpLog(): Promise<never> {
+  async tailOpLog(): Promise<never> {
     return new Promise<never>((resolve) => {
       this.tail()
         .bufferWithTimeOrCount(1000, 50)
