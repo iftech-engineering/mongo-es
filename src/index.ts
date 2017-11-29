@@ -21,22 +21,24 @@ export async function run(config: Config): Promise<void> {
 
   // run tasks
   await Promise.all(config.tasks.map(async (task) => {
-    const mongodb = await MongoDB.init(config.mongodb, task)
-    const elasticsearch = new Elasticsearch(config.elasticsearch, task)
-    const processor = new Processor(task, config.controls, mongodb, elasticsearch)
-    if (task.from.phase === 'scan') {
-      try {
+    try {
+      const mongodb = await MongoDB.init(config.mongodb, task)
+      const elasticsearch = new Elasticsearch(config.elasticsearch, task)
+      const processor = new Processor(task, config.controls, mongodb, elasticsearch)
+      if (task.from.phase === 'scan') {
         console.log('scan', task.name(), 'from', task.from.id)
         const time = new Date()
         await processor.scanDocument()
         await task.endScan(time)
         console.log('scan', task.name(), 'end')
-      } catch (err) {
-        console.error('scan', err)
       }
+      console.log('tail', task.name(), 'from', task.from.time)
+      await processor.tailOpLog()
+    } catch (err) {
+      console.error('=====================')
+      console.error('= ERROR', err)
+      console.error('=====================')
     }
-    console.log('tail', task.name(), 'from', task.from.time)
-    await processor.tailOpLog()
   }))
 }
 
