@@ -1,27 +1,33 @@
 import { Readable } from 'stream'
 
-import { Observable } from 'rx'
-import { forEach, size, get, set, unset, has, keys, compact, map, reduce, isEmpty } from 'lodash'
+import { Observable, Subject } from 'rx'
+import * as _ from 'lodash'
 
 import { Task, Controls, CheckPoint } from './config'
+import { IR, Document, OpLog } from './types'
 import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
-import { IR, Document, OpLog } from './types'
 
 export default class Processor {
-  private task: Task
-  private controls: Controls
-  private static provisionedReadCapacity: number
-  private static consumedReadCapacity: number
+  static provisionedReadCapacity: number
+  static consumedReadCapacity: number
+  task: Task
+  controls: Controls
+  mongodb: MongoDB
+  elasticsearch: Elasticsearch
+  queue: OpLog[][] = []
+  running: boolean = false
 
-  constructor(task: Task, controls: Controls) {
+  constructor(task: Task, controls: Controls, mongodb: MongoDB, elasticsearch: Elasticsearch) {
     this.task = task
     this.controls = controls
+    this.mongodb = mongodb
+    this.elasticsearch = elasticsearch
     Processor.provisionedReadCapacity = controls.mongodbReadCapacity
     Processor.consumedReadCapacity = 0
   }
 
-  private static controlReadCapacity(stream: Readable): Readable {
+  static controlReadCapacity(stream: Readable): Readable {
     if (!Processor.provisionedReadCapacity) {
       return stream
     }
@@ -41,57 +47,57 @@ export default class Processor {
     return stream
   }
 
-  public transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
+  transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
         id: doc._id.toHexString(),
-        parent: this.task.transform.parent && get(doc, this.task.transform.parent),
+        parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
       }
     }
-    const data = reduce(this.task.transform.mapping, (obj, value, key) => {
-      if (has(doc, key)) {
-        set(obj, value, get(doc, key))
+    const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
+      if (_.has(doc, key)) {
+        _.set(obj, value, _.get(doc, key))
       }
       return obj
     }, {})
-    if (isEmpty(data)) {
+    if (_.isEmpty(data)) {
       return null
     }
     return {
       action: 'upsert',
       id: doc._id.toHexString(),
       data,
-      parent: this.task.transform.parent && get(doc, this.task.transform.parent),
+      parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
     }
   }
 
-  public applyUpdate(doc: Document, $set: any = {}, $unset: any = {}): Document {
-    forEach(this.task.transform.mapping, (value, key) => {
-      if (has($unset, key)) {
-        unset(doc, value)
+  applyUpdate(doc: Document, set: any = {}, unset: any = {}): Document {
+    _.forEach(this.task.transform.mapping, (value, key) => {
+      if (_.get(unset, key)) {
+        _.unset(doc, value)
       }
-      if (has($set, key)) {
-        set(doc, value, get($set, key))
+      if (_.has(set, key)) {
+        _.set(doc, value, _.get(set, key))
       }
     })
     return doc
   }
 
-  public ignoreUpdate(oplog: OpLog): boolean {
+  ignoreUpdate(oplog: OpLog): boolean {
     let ignore = true
     if (oplog.op === 'u') {
-      forEach(this.task.transform.mapping, (value, key) => {
-        ignore = ignore && !(has(oplog.o, key) || has(oplog.o.$set, key) || has(oplog.o.$unset, key))
+      _.forEach(this.task.transform.mapping, (value, key) => {
+        ignore = ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.get(oplog.o.$unset, key))
       })
     }
     return ignore
   }
 
-  public scan(): Observable<Document> {
+  scan(): Observable<Document> {
     return Observable.create<Document>((observer) => {
       try {
-        const stream = Processor.controlReadCapacity(MongoDB.getCollection(this.task))
+        const stream = Processor.controlReadCapacity(this.mongodb.getCollection())
         stream.addListener('data', (doc: Document) => {
           observer.onNext(doc)
         })
@@ -107,10 +113,10 @@ export default class Processor {
     })
   }
 
-  public tail(): Observable<OpLog> {
+  tail(): Observable<OpLog> {
     return Observable.create<OpLog>((observer) => {
       try {
-        const cursor = MongoDB.getOplog(this.task)
+        const cursor = this.mongodb.getOplog()
         cursor.forEach((log: OpLog) => {
           observer.onNext(log)
         }, () => {
@@ -122,14 +128,14 @@ export default class Processor {
     })
   }
 
-  public async oplog(oplog: OpLog): Promise<IR | null> {
+  async oplog(oplog: OpLog): Promise<IR | null> {
     try {
       switch (oplog.op) {
         case 'i': {
           return this.transformer('upsert', oplog.o)
         }
         case 'u': {
-          if (size(oplog.o2) !== 1 || !oplog.o2._id) {
+          if (_.size(oplog.o2) !== 1 || !oplog.o2._id) {
             console.warn('oplog', 'cannot transform', oplog)
             return null
           }
@@ -137,27 +143,27 @@ export default class Processor {
             console.debug('ignoreUpdate', oplog)
             return null
           }
-          if (keys(oplog.o).filter(key => key.startsWith('$')).length === 0) {
+          if (_.keys(oplog.o).find(key => !key.startsWith('$'))) {
             return this.transformer('upsert', {
               _id: oplog.o2._id,
               ...oplog.o,
             })
           }
           const old = this.task.transform.parent
-            ? await Elasticsearch.search(this.task, oplog.o2._id)
-            : await Elasticsearch.retrieve(this.task, oplog.o2._id)
+            ? await this.elasticsearch.search(oplog.o2._id)
+            : await this.elasticsearch.retrieve(oplog.o2._id)
           const doc = old
             ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset)
-            : await MongoDB.retrieve(this.task, oplog.o2._id)
+            : await this.mongodb.retrieve(oplog.o2._id)
           return doc ? this.transformer('upsert', doc) : null
         }
         case 'd': {
-          if (size(oplog.o) !== 1 || !oplog.o._id) {
+          if (_.size(oplog.o) !== 1 || !oplog.o._id) {
             console.warn('oplog', 'cannot transform', oplog)
             return null
           }
           const doc = this.task.transform.parent
-            ? await Elasticsearch.search(this.task, oplog.o._id)
+            ? await this.elasticsearch.search(oplog.o._id)
             : oplog.o
           console.debug(doc)
           return doc ? this.transformer('delete', doc) : null
@@ -172,7 +178,7 @@ export default class Processor {
     }
   }
 
-  public async load(irs: IR[]): Promise<void> {
+  async load(irs: IR[]): Promise<void> {
     if (irs.length === 0) {
       return
     }
@@ -204,14 +210,44 @@ export default class Processor {
         }
       }
     })
-    return await Elasticsearch.bulk({ body })
+    return await this.elasticsearch.bulk({ body })
   }
 
-  public async scanDocument(): Promise<void> {
+  mergeOplogs(oplogs: OpLog[]): OpLog[] {
+    const store: { [key: string]: OpLog } = {}
+    for (let oplog of _.sortBy(oplogs, 'ts')) {
+      switch (oplog.op) {
+        case 'i': {
+          store[oplog.ns + oplog.o._id.toString()] = oplog
+          break
+        }
+        case 'u': {
+          const doc = store[oplog.ns + oplog.o2._id.toString()]
+          if (doc && doc.op === 'i') {
+            doc.o = this.applyUpdate(doc.o as Document, oplog.o.$set, oplog.o.$unset)
+            doc.ts = oplog.ts
+          } else if (doc && doc.op === 'u') {
+            doc.o = _.merge(doc.o, oplog.o)
+            doc.ts = oplog.ts
+          } else {
+            store[oplog.ns + oplog.o2._id.toString()] = oplog
+          }
+          break
+        }
+        case 'd': {
+          delete store[oplog.ns + oplog.o._id.toString()]
+          break
+        }
+      }
+    }
+    return _.sortBy(_.map(store, oplog => oplog), 'ts')
+  }
+
+  async scanDocument(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.scan()
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .map(docs => compact<IR>(map(docs, doc => this.transformer('upsert', doc))))
+        .map(docs => _.compact<IR>(_.map(docs, doc => this.transformer('upsert', doc))))
         .subscribe(async (irs) => {
           if (irs.length === 0) {
             return
@@ -230,41 +266,52 @@ export default class Processor {
     })
   }
 
-  public async tailOpLog(): Promise<never> {
-    return new Promise<never>((resolve) => {
+  async tailOpLog(): Promise<never> {
+    return new Promise<never>((resolve, reject) => {
       this.tail()
-        .bufferWithTimeOrCount(1000, 50)
-        .flatMap((logs) => {
-          return Observable.create<IR>(async (observer) => {
-            for (let log of logs) {
-              const ir = await this.oplog(log)
-              if (ir) {
-                observer.onNext(ir)
-              }
-            }
-          })
-        })
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .subscribe(async (irs) => {
-          if (irs.length === 0) {
-            return
-          }
-          try {
-            await this.load(irs)
-            await Task.saveCheckpoint(this.task.name(), new CheckPoint({
-              phase: 'tail',
-              time: Date.now() - 1000 * 10,
-            }))
-            console.log('tail', this.task.name(), irs.length)
-          } catch (err) {
-            console.warn('tail', this.task.name(), err.message)
+        .subscribe((oplogs) => {
+          this.queue.push(oplogs)
+          if (!this.running) {
+            this.running = true
+            setImmediate(this._processOplog.bind(this))
           }
         }, (err) => {
           console.error('tail', this.task.name(), err)
+          reject(err)
         }, () => {
           console.error('tail', this.task.name(), 'should not complete')
           resolve()
         })
     })
+  }
+
+  async _processOplog() {
+    if (this.queue.length === 0) {
+      this.running = false
+      return
+    }
+    while (this.queue.length > 0) {
+      await this._processOplogSafe(this.queue.shift())
+    }
+    setImmediate(this._processOplog.bind(this))
+  }
+
+  async _processOplogSafe(oplogs) {
+    try {
+      const irs = _.compact(await Promise.all(this.mergeOplogs(oplogs).map(async (oplog) => {
+        return await this.oplog(oplog)
+      })))
+      if (irs.length > 0) {
+        await this.load(irs)
+        await Task.saveCheckpoint(this.task.name(), new CheckPoint({
+          phase: 'tail',
+          time: Date.now() - 1000 * 10,
+        }))
+        console.log('tail', this.task.name(), irs.length, irs[0].id)
+      }
+    } catch (err) {
+      console.warn('tail', this.task.name(), err.message)
+    }
   }
 }
