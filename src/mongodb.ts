@@ -11,7 +11,7 @@ export default class MongoDB {
   collection: Collection
   oplog: Collection
   task: Task
-  retrieveBuffer: { [id: string]: Function[] } = {}
+  retrieveBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
   retrieveRunning: boolean = false
 
   private constructor(collection: Collection, oplog: Collection, task: Task) {
@@ -73,7 +73,7 @@ export default class MongoDB {
     })
   }
 
-  async _retrieve() {
+  async _retrieve(): Promise<void> {
     const ids = Object.keys(this.retrieveBuffer)
     if (ids.length === 0) {
       this.retrieveRunning = false

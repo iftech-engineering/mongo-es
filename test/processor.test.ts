@@ -212,3 +212,55 @@ test('mergeOplogs update then update', t => {
     },
   }])
 })
+
+test('mergeOplogs insert then update then update', t => {
+  const processor = new Processor({
+    transform: {
+      mapping: {
+        "field0": "field0",
+      },
+    },
+  } as any, new Controls({}), null as any, null as any)
+  const oplogs = processor.mergeOplogs([{
+    ts: new Timestamp(0, 0),
+    op: 'i',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      field0: 0,
+    },
+  }, {
+    ts: new Timestamp(0, 2),
+    op: 'u',
+    ns: 'example1',
+    o: {
+      $set: {
+        field0: 2,
+      },
+    },
+    o2: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }, {
+    ts: new Timestamp(0, 1),
+    op: 'u',
+    ns: 'example1',
+    o: {
+      $set: {
+        field0: 1
+      },
+    },
+    o2: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }])
+  t.deepEqual(oplogs, [{
+    ts: new Timestamp(0, 2),
+    op: 'i',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      field0: 2,
+    },
+  }])
+})
