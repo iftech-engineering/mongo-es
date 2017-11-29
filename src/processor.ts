@@ -274,7 +274,7 @@ export default class Processor {
           this.queue.push(oplogs)
           if (!this.running) {
             this.running = true
-            setImmediate(this._processOplog)
+            setImmediate(this._processOplog.bind(this))
           }
         }, (err) => {
           console.error('tail', this.task.name(), err)
@@ -294,7 +294,7 @@ export default class Processor {
     while (this.queue.length > 0) {
       await this._processOplogSafe(this.queue.shift())
     }
-    setImmediate(this._processOplog)
+    setImmediate(this._processOplog.bind(this))
   }
 
   async _processOplogSafe(oplogs) {

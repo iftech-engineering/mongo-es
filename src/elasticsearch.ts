@@ -97,7 +97,7 @@ export default class Elasticsearch {
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
         this.retrieveRunning = true
-        setTimeout(this._retrieve, 1000)
+        setTimeout(this._retrieve.bind(this), 1000)
       }
     })
   }
@@ -116,7 +116,7 @@ export default class Elasticsearch {
         cb(docs[id] || null)
       })
     })
-    setTimeout(this._retrieve, 1000)
+    setTimeout(this._retrieve.bind(this), 1000)
   }
 
   async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
