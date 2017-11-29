@@ -1,6 +1,6 @@
 import { Readable } from 'stream'
 
-import { Observable } from 'rx'
+import { Observable, Subject } from 'rx'
 import * as _ from 'lodash'
 
 import { Task, Controls, CheckPoint } from './config'
@@ -265,31 +265,27 @@ export default class Processor {
   }
 
   async tailOpLog(): Promise<never> {
+    const pauser = new Subject<boolean>()
     return new Promise<never>((resolve) => {
+      pauser.onNext(true)
       this.tail()
-        .bufferWithTimeOrCount(1000, 500)
-        .flatMap((oplogs) => {
-          return Observable.create<IR>(async (observer) => {
-            for (let oplog of this.mergeOplogs(oplogs)) {
-              const ir = await this.oplog(oplog)
-              if (ir) {
-                observer.onNext(ir)
-              }
-            }
-          })
-        })
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .subscribe(async (irs) => {
-          if (irs.length === 0) {
-            return
-          }
+        .pausableBuffered(pauser)
+        .subscribe(async (oplogs) => {
           try {
-            await this.load(irs)
-            await Task.saveCheckpoint(this.task.name(), new CheckPoint({
-              phase: 'tail',
-              time: Date.now() - 1000 * 10,
-            }))
-            console.log('tail', this.task.name(), irs.length)
+            pauser.onNext(true)
+            const irs = _.compact(await Promise.all(this.mergeOplogs(oplogs).map(async (oplog) => {
+              return await this.oplog(oplog)
+            })))
+            if (irs.length > 0) {
+              await this.load(irs)
+              await Task.saveCheckpoint(this.task.name(), new CheckPoint({
+                phase: 'tail',
+                time: Date.now() - 1000 * 10,
+              }))
+              console.log('tail', this.task.name(), irs.length)
+            }
+            pauser.onNext(false)
           } catch (err) {
             console.warn('tail', this.task.name(), err.message)
           }
