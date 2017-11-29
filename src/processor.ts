@@ -308,7 +308,7 @@ export default class Processor {
           phase: 'tail',
           time: Date.now() - 1000 * 10,
         }))
-        console.log('tail', this.task.name(), irs.length)
+        console.log('tail', this.task.name(), irs.length, irs[0].id)
       }
     } catch (err) {
       console.warn('tail', this.task.name(), err.message)
