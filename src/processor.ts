@@ -15,6 +15,8 @@ export default class Processor {
   controls: Controls
   mongodb: MongoDB
   elasticsearch: Elasticsearch
+  queue: OpLog[][] = []
+  running: boolean = false
 
   constructor(task: Task, controls: Controls, mongodb: MongoDB, elasticsearch: Elasticsearch) {
     this.task = task
@@ -265,36 +267,51 @@ export default class Processor {
   }
 
   async tailOpLog(): Promise<never> {
-    const pauser = new Subject<boolean>()
-    return new Promise<never>((resolve) => {
-      pauser.onNext(true)
+    return new Promise<never>((resolve, reject) => {
       this.tail()
         .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
-        .pausableBuffered(pauser)
-        .subscribe(async (oplogs) => {
-          try {
-            pauser.onNext(true)
-            const irs = _.compact(await Promise.all(this.mergeOplogs(oplogs).map(async (oplog) => {
-              return await this.oplog(oplog)
-            })))
-            if (irs.length > 0) {
-              await this.load(irs)
-              await Task.saveCheckpoint(this.task.name(), new CheckPoint({
-                phase: 'tail',
-                time: Date.now() - 1000 * 10,
-              }))
-              console.log('tail', this.task.name(), irs.length)
-            }
-            pauser.onNext(false)
-          } catch (err) {
-            console.warn('tail', this.task.name(), err.message)
+        .subscribe((oplogs) => {
+          this.queue.push(oplogs)
+          if (!this.running) {
+            this.running = true
+            setImmediate(this._processOplog)
           }
         }, (err) => {
           console.error('tail', this.task.name(), err)
+          reject(err)
         }, () => {
           console.error('tail', this.task.name(), 'should not complete')
           resolve()
         })
     })
+  }
+
+  async _processOplog() {
+    if (this.queue.length === 0) {
+      this.running = false
+      return
+    }
+    while (this.queue.length > 0) {
+      await this._processOplogSafe(this.queue.shift())
+    }
+    setImmediate(this._processOplog)
+  }
+
+  async _processOplogSafe(oplogs) {
+    try {
+      const irs = _.compact(await Promise.all(this.mergeOplogs(oplogs).map(async (oplog) => {
+        return await this.oplog(oplog)
+      })))
+      if (irs.length > 0) {
+        await this.load(irs)
+        await Task.saveCheckpoint(this.task.name(), new CheckPoint({
+          phase: 'tail',
+          time: Date.now() - 1000 * 10,
+        }))
+        console.log('tail', this.task.name(), irs.length)
+      }
+    } catch (err) {
+      console.warn('tail', this.task.name(), err.message)
+    }
   }
 }
