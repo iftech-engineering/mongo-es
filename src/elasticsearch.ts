@@ -1,5 +1,6 @@
 import { Client, BulkIndexDocumentsParams } from 'elasticsearch'
 import { ObjectID } from 'mongodb'
+import { keyBy } from 'lodash'
 
 import { Document } from './types'
 import { ElasticsearchConfig, Task } from './config'
@@ -7,6 +8,10 @@ import { ElasticsearchConfig, Task } from './config'
 export default class Elasticsearch {
   client: Client
   task: Task
+  searchBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
+  searchRunning: boolean = false
+  retrieveBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
+  retrieveRunning: boolean = false
 
   constructor(elasticsearch: ElasticsearchConfig, task: Task) {
     this.client = new Client({ ...elasticsearch.options })
@@ -23,55 +28,114 @@ export default class Elasticsearch {
 
   async search(id: ObjectID): Promise<Document | null> {
     return new Promise<Document | null>((resolve) => {
+      this.searchBuffer[id.toHexString()] = this.searchBuffer[id.toHexString()] || []
+      this.searchBuffer[id.toHexString()].push(resolve)
+      if (!this.searchRunning) {
+        this.searchRunning = true
+        setTimeout(this._search, 1000)
+      }
+    })
+  }
+
+  async _search(): Promise<void> {
+    const ids = Object.keys(this.searchBuffer)
+    if (ids.length === 0) {
+      this.searchRunning = false
+      return
+    }
+    const docs = await this._searchBatchSafe(ids)
+    ids.forEach((id) => {
+      const cbs = this.searchBuffer[id]
+      delete this.searchBuffer[id]
+      cbs.forEach((cb) => {
+        cb(docs[id] || null)
+      })
+    })
+    setTimeout(this._search, 1000)
+  }
+
+  async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
+    return new Promise<{ [id: string]: Document }>((resolve) => {
       this.client.search<Document>({
         index: this.task.load.index,
         type: this.task.load.type,
         body: {
           query: {
-            term: {
-              _id: id.toHexString(),
+            terms: {
+              _id: ids,
             },
           },
         },
-      }, (err, response: any) => {
+      }, (err, response) => {
         if (err) {
-          console.warn('search from elasticsearch', this.task.name(), id, err.message)
-          resolve(null)
-          return
-        }
-        if (response.hits.total === 0) {
-          console.warn('search from elasticsearch', this.task.name(), id, 'not found')
-          resolve(null)
+          console.warn('search from elasticsearch', this.task.name(), ids, err.message)
+          resolve({})
           return
         }
         console.debug('search from elasticsearch', response)
-        const doc = response.hits.hits[0]._source
-        doc._id = new ObjectID(response.hits.hits[0]._id)
-        if (this.task.transform.parent && response.hits.hits[0]._parent) {
-          doc[this.task.transform.parent] = new ObjectID(response.hits.hits[0]._parent)
-        }
-        resolve(doc)
+        const docs = response.hits.hits.map((hit: any) => {
+          const doc = hit._source
+          doc._id = new ObjectID(hit._id)
+          if (this.task.transform.parent && hit._parent) {
+            doc[this.task.transform.parent] = new ObjectID(hit._parent)
+          }
+          return doc as Document
+        })
+        resolve(keyBy(docs, doc => doc._id.toHexString()))
       })
     })
   }
 
   async retrieve(id: ObjectID): Promise<Document | null> {
     return new Promise<Document | null>((resolve) => {
-      this.client.get<Document>({
+      this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
+      this.retrieveBuffer[id.toHexString()].push(resolve)
+      if (!this.retrieveRunning) {
+        this.retrieveRunning = true
+        setTimeout(this._retrieve, 1000)
+      }
+    })
+  }
+
+  async _retrieve(): Promise<void> {
+    const ids = Object.keys(this.retrieveBuffer)
+    if (ids.length === 0) {
+      this.retrieveRunning = false
+      return
+    }
+    const docs = await this._retrieveBatchSafe(ids)
+    ids.forEach((id) => {
+      const cbs = this.retrieveBuffer[id]
+      delete this.retrieveBuffer[id]
+      cbs.forEach((cb) => {
+        cb(docs[id] || null)
+      })
+    })
+    setTimeout(this._retrieve, 1000)
+  }
+
+  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
+    return new Promise<{ [id: string]: Document }>((resolve) => {
+      this.client.mget<Document>({
         index: this.task.load.index as string,
         type: this.task.load.type,
-        id: id.toHexString(),
+        body: {
+          ids,
+        }
       }, (err, response) => {
-        if (err) {
-          console.warn('retrieve from elasticsearch', this.task.name(), id, err.message)
-          resolve(null)
+        if (err || !response.docs) {
+          console.warn('retrieve from elasticsearch', this.task.name(), ids, err.message)
+          resolve({})
           return
         }
         console.debug('retrieve from elasticsearch', response)
-        resolve(response ? {
-          ...response._source,
-          _id: new ObjectID(response._id),
-        } : null)
+        const docs = response.docs.map(doc => {
+          return {
+            ...doc._source,
+            _id: new ObjectID(doc._id),
+          }
+        })
+        resolve(keyBy(docs, doc => doc._id.toHexString()))
       })
     })
   }
