@@ -6,7 +6,7 @@ import { Document } from './types'
 import { ElasticsearchConfig, Task } from './config'
 
 export default class Elasticsearch {
-  client: Client
+  static client: Client
   task: Task
   searchBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
   searchRunning: boolean = false
@@ -14,13 +14,15 @@ export default class Elasticsearch {
   retrieveRunning: boolean = false
 
   constructor(elasticsearch: ElasticsearchConfig, task: Task) {
-    this.client = new Client({ ...elasticsearch.options })
+    if (!Elasticsearch.client) {
+      Elasticsearch.client = new Client({ ...elasticsearch.options })
+    }
     this.task = task
   }
 
   async bulk(params: BulkIndexDocumentsParams): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.client.bulk(params, (err, response) => {
+      Elasticsearch.client.bulk(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
@@ -32,7 +34,7 @@ export default class Elasticsearch {
       this.searchBuffer[id.toHexString()].push(resolve)
       if (!this.searchRunning) {
         this.searchRunning = true
-        setTimeout(this._search, 1000)
+        setImmediate(this._search.bind(this))
       }
     })
   }
@@ -51,12 +53,12 @@ export default class Elasticsearch {
         cb(docs[id] || null)
       })
     })
-    setTimeout(this._search, 1000)
+    setImmediate(this._search.bind(this))
   }
 
   async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
     return new Promise<{ [id: string]: Document }>((resolve) => {
-      this.client.search<Document>({
+      Elasticsearch.client.search<Document>({
         index: this.task.load.index,
         type: this.task.load.type,
         body: {
@@ -121,7 +123,7 @@ export default class Elasticsearch {
 
   async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
     return new Promise<{ [id: string]: Document }>((resolve) => {
-      this.client.mget<Document>({
+      Elasticsearch.client.mget<Document>({
         index: this.task.load.index as string,
         type: this.task.load.type,
         body: {

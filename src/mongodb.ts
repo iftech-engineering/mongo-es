@@ -8,15 +8,14 @@ import { Document } from './types'
 import { Task, MongoConfig } from './config'
 
 export default class MongoDB {
+  static oplog: Collection
   collection: Collection
-  oplog: Collection
   task: Task
   retrieveBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
   retrieveRunning: boolean = false
 
-  private constructor(collection: Collection, oplog: Collection, task: Task) {
+  private constructor(collection: Collection, task: Task) {
     this.collection = collection
-    this.oplog = oplog
     this.task = task
   }
 
@@ -24,9 +23,11 @@ export default class MongoDB {
     const url = parse(mongodb.url)
     url.pathname = `/${task.extract.db}`
     const collection = (await MongoClient.connect(format(url), mongodb.options)).collection(task.extract.collection)
-    url.pathname = '/local'
-    const oplog = (await MongoClient.connect(format(url), mongodb.options)).collection('oplog.rs')
-    return new MongoDB(collection, oplog, task)
+    if (!MongoDB.oplog) {
+      url.pathname = '/local'
+      MongoDB.oplog = (await MongoClient.connect(format(url), mongodb.options)).collection('oplog.rs')
+    }
+    return new MongoDB(collection, task)
   }
 
   getCollection(): Readable {
@@ -45,7 +46,7 @@ export default class MongoDB {
   }
 
   getOplog(): Cursor {
-    return this.oplog
+    return MongoDB.oplog
       .find({
         ns: `${this.task.extract.db}.${this.task.extract.collection}`,
         ts: {

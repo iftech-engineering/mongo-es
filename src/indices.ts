@@ -3,10 +3,12 @@ import { Client, IndicesCreateParams, IndicesPutMappingParams, IndicesExistsPara
 import { Config, ElasticsearchConfig, Task } from './config'
 
 export default class Indices {
-  client: Client
+  static client: Client
 
   private constructor(elasticsearch: ElasticsearchConfig) {
-    this.client = new Client({ ...elasticsearch.options })
+    if (!Indices.client) {
+      Indices.client = new Client({ ...elasticsearch.options })
+    }
   }
 
   static async init(config: Config): Promise<void> {
@@ -27,7 +29,7 @@ export default class Indices {
 
   async create(params: IndicesCreateParams): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.client.indices.create(params, (err, response) => {
+      Indices.client.indices.create(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
@@ -35,7 +37,7 @@ export default class Indices {
 
   async putMapping(params: IndicesPutMappingParams): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.client.indices.putMapping(params, (err, response) => {
+      Indices.client.indices.putMapping(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })
@@ -43,7 +45,7 @@ export default class Indices {
 
   async exists(params: IndicesExistsParams): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-      this.client.indices.exists(params, (err, response) => {
+      Indices.client.indices.exists(params, (err, response) => {
         err ? reject(err) : resolve(response)
       })
     })

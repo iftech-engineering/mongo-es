@@ -69,6 +69,7 @@ test('transformer create', t => {
       },
     },
     parent: undefined,
+    timestamp: undefined,
   })
 })
 
@@ -84,6 +85,7 @@ test('transformer update', t => {
       },
     },
     parent: undefined,
+    timestamp: undefined,
   })
 })
 
@@ -93,6 +95,7 @@ test('transformer delete', t => {
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     parent: undefined,
+    timestamp: undefined,
   })
 })
 
