@@ -35,13 +35,10 @@ export default class MongoDB {
       .find({
         ...this.task.extract.query,
         _id: {
-          $lte: this.task.from.id,
+          $gte: this.task.from.id,
         },
       })
       .project(this.task.extract.projection)
-      .sort({
-        $natural: -1,
-      })
       .stream()
   }
 

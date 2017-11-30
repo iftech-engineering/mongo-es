@@ -26,9 +26,8 @@ export async function run(config: Config): Promise<void> {
     const processor = new Processor(task, config.controls, mongodb, elasticsearch)
     if (task.from.phase === 'scan') {
       console.log('scan', task.name(), 'from', task.from.id)
-      const time = new Date()
       await processor.scanDocument()
-      await task.endScan(time)
+      await task.endScan()
       console.log('scan', task.name(), 'end')
     }
     console.log('tail', task.name(), 'from', task.from.time)

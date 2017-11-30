@@ -26,16 +26,12 @@ export class CheckPoint {
   id: ObjectID
   time: Date
 
-  constructor({ phase, id = 'FFFFFFFFFFFFFFFFFFFFFFFF', time = 0 }) {
+  constructor({ phase, id = '000000000000000000000000', time = Date.now() }) {
     this.phase = phase
     if (phase === 'scan') {
       this.id = new ObjectID(id)
-      return
     }
-    if (phase === 'tail') {
-      this.time = new Date(time)
-      return
-    }
+    this.time = new Date(time)
     throw new Error(`unknown check point phase: ${phase}`)
   }
 }
@@ -77,9 +73,8 @@ export class Task {
     return `${this.extract.db}.${this.extract.collection}___${this.load.index}.${this.load.type}`
   }
 
-  async endScan(time: Date): Promise<void> {
+  async endScan(): Promise<void> {
     this.from.phase = 'tail'
-    this.from.time = time
     delete this.from.id
     await Task.saveCheckpoint(this.name(), this.from)
   }
