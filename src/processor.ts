@@ -2,6 +2,7 @@ import { Readable } from 'stream'
 
 import { Observable, Subject } from 'rx'
 import * as _ from 'lodash'
+import { Timestamp } from 'mongodb'
 
 import { Task, Controls, CheckPoint } from './config'
 import { IR, Document, OpLog } from './types'
@@ -47,12 +48,13 @@ export default class Processor {
     return stream
   }
 
-  transformer(action: 'upsert' | 'delete', doc: Document): IR | null {
+  transformer(action: 'upsert' | 'delete', doc: Document, timestamp?: Timestamp): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
         id: doc._id.toHexString(),
         parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
+        timestamp,
       }
     }
     const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
@@ -69,6 +71,7 @@ export default class Processor {
       id: doc._id.toHexString(),
       data,
       parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
+      timestamp,
     }
   }
 
@@ -132,7 +135,7 @@ export default class Processor {
     try {
       switch (oplog.op) {
         case 'i': {
-          return this.transformer('upsert', oplog.o)
+          return this.transformer('upsert', oplog.o, oplog.ts)
         }
         case 'u': {
           if (_.size(oplog.o2) !== 1 || !oplog.o2._id) {
@@ -147,7 +150,7 @@ export default class Processor {
             return this.transformer('upsert', {
               _id: oplog.o2._id,
               ...oplog.o,
-            })
+            }, oplog.ts)
           }
           const old = this.task.transform.parent
             ? await this.elasticsearch.search(oplog.o2._id)
@@ -155,7 +158,7 @@ export default class Processor {
           const doc = old
             ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset)
             : await this.mongodb.retrieve(oplog.o2._id)
-          return doc ? this.transformer('upsert', doc) : null
+          return doc ? this.transformer('upsert', doc, oplog.ts) : null
         }
         case 'd': {
           if (_.size(oplog.o) !== 1 || !oplog.o._id) {
@@ -166,7 +169,7 @@ export default class Processor {
             ? await this.elasticsearch.search(oplog.o._id)
             : oplog.o
           console.debug(doc)
-          return doc ? this.transformer('delete', doc) : null
+          return doc ? this.transformer('delete', doc, oplog.ts) : null
         }
         default: {
           return null
@@ -246,7 +249,7 @@ export default class Processor {
   async scanDocument(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.scan()
-        .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
+        .bufferWithTimeOrCount(2000, this.controls.elasticsearchBulkSize)
         .map(docs => _.compact<IR>(_.map(docs, doc => this.transformer('upsert', doc))))
         .subscribe(async (irs) => {
           if (irs.length === 0) {
@@ -269,7 +272,7 @@ export default class Processor {
   async tailOpLog(): Promise<never> {
     return new Promise<never>((resolve, reject) => {
       this.tail()
-        .bufferWithTimeOrCount(1000, this.controls.elasticsearchBulkSize)
+        .bufferWithTimeOrCount(2000, this.controls.elasticsearchBulkSize)
         .subscribe((oplogs) => {
           this.queue.push(oplogs)
           if (!this.running) {
@@ -310,7 +313,7 @@ export default class Processor {
           phase: 'tail',
           time: Date.now() - 1000 * 10,
         }))
-        console.log('tail', this.task.name(), irs.length, irs[0].id)
+        console.log('tail', this.task.name(), irs.length, irs[0].timestamp)
       }
     } catch (err) {
       console.warn('tail', this.task.name(), err.message)
