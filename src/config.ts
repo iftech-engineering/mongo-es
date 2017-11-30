@@ -32,7 +32,6 @@ export class CheckPoint {
       this.id = new ObjectID(id)
     }
     this.time = new Date(time)
-    throw new Error(`unknown check point phase: ${phase}`)
   }
 }
 
