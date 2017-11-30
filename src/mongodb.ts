@@ -69,7 +69,7 @@ export default class MongoDB {
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
         this.retrieveRunning = true
-        setImmediate(this._retrieve.bind(this))
+        setTimeout(this._retrieve.bind(this), 1000)
       }
     })
   }
@@ -88,7 +88,7 @@ export default class MongoDB {
         cb(docs[id] || null)
       })
     })
-    setImmediate(this._retrieve.bind(this))
+    setTimeout(this._retrieve.bind(this), 1000)
   }
 
   async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {

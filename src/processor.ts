@@ -283,8 +283,9 @@ export default class Processor {
           console.error('tail', this.task.name(), err)
           reject(err)
         }, () => {
-          console.error('tail', this.task.name(), 'should not complete')
-          resolve()
+          const err = new Error('should not complete')
+          console.error('tail', this.task.name(), err)
+          reject(err)
         })
     })
   }

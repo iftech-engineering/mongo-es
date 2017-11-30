@@ -34,7 +34,7 @@ export default class Elasticsearch {
       this.searchBuffer[id.toHexString()].push(resolve)
       if (!this.searchRunning) {
         this.searchRunning = true
-        setImmediate(this._search.bind(this))
+        setTimeout(this._search.bind(this), 1000)
       }
     })
   }
@@ -53,7 +53,7 @@ export default class Elasticsearch {
         cb(docs[id] || null)
       })
     })
-    setImmediate(this._search.bind(this))
+    setTimeout(this._search.bind(this), 1000)
   }
 
   async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
@@ -99,7 +99,7 @@ export default class Elasticsearch {
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
         this.retrieveRunning = true
-        setImmediate(this._retrieve.bind(this))
+        setTimeout(this._retrieve.bind(this), 1000)
       }
     })
   }
@@ -118,7 +118,7 @@ export default class Elasticsearch {
         cb(docs[id] || null)
       })
     })
-    setImmediate(this._retrieve.bind(this))
+    setTimeout(this._retrieve.bind(this), 1000)
   }
 
   async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
