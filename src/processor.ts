@@ -292,7 +292,9 @@ export default class Processor {
       return
     }
     while (this.queue.length > 0) {
-      await this._processOplogSafe(this.queue.shift())
+      const oplogs = _.flatten(this.queue)
+      this.queue = []
+      await this._processOplogSafe(oplogs)
     }
     setImmediate(this._processOplog.bind(this))
   }
