@@ -54,7 +54,7 @@ export default class Processor {
         action: 'delete',
         id: doc._id.toHexString(),
         parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
-        timestamp,
+        timestamp: timestamp ? timestamp.getHighBits() : 0,
       }
     }
     const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
@@ -71,7 +71,7 @@ export default class Processor {
       id: doc._id.toHexString(),
       data,
       parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
-      timestamp,
+      timestamp: timestamp ? timestamp.getHighBits() : 0,
     }
   }
 
@@ -313,7 +313,7 @@ export default class Processor {
           phase: 'tail',
           time: Date.now() - 1000 * 10,
         }))
-        console.log('tail', this.task.name(), irs.length, irs[0].timestamp)
+        console.log('tail', this.task.name(), irs.length, new Date(irs[0].timestamp * 1000))
       }
     } catch (err) {
       console.warn('tail', this.task.name(), err.message)

@@ -1,6 +1,6 @@
 import { parse, format } from 'url'
 import { Readable } from 'stream'
-import { keyBy, keys } from 'lodash'
+import * as _ from 'lodash'
 
 import { Timestamp, Cursor, MongoClient, ObjectID, Collection } from 'mongodb'
 
@@ -75,7 +75,7 @@ export default class MongoDB {
   }
 
   async _retrieve(): Promise<void> {
-    const ids = keys(this.retrieveBuffer)
+    const ids = _.take(_.keys(this.retrieveBuffer), 1024)
     if (ids.length === 0) {
       this.retrieveRunning = false
       return
@@ -99,7 +99,7 @@ export default class MongoDB {
         },
       }).toArray()
       console.debug('retrieve from mongodb', docs)
-      return keyBy(docs, doc => doc._id.toHexString())
+      return _.keyBy(docs, doc => doc._id.toHexString())
     } catch (err) {
       console.warn('retrieve from mongodb', this.task.name(), ids, err)
       return {}

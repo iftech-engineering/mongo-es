@@ -1,6 +1,6 @@
 import { Client, BulkIndexDocumentsParams } from 'elasticsearch'
 import { ObjectID } from 'mongodb'
-import { keyBy, keys } from 'lodash'
+import * as _ from 'lodash'
 
 import { Document } from './types'
 import { ElasticsearchConfig, Task } from './config'
@@ -40,7 +40,7 @@ export default class Elasticsearch {
   }
 
   async _search(): Promise<void> {
-    const ids = keys(this.searchBuffer)
+    const ids = _.take(_.keys(this.searchBuffer), 1024)
     if (ids.length === 0) {
       this.searchRunning = false
       return
@@ -84,7 +84,7 @@ export default class Elasticsearch {
             }
             return doc as Document
           })
-          resolve(keyBy(docs, doc => doc._id.toHexString()))
+          resolve(_.keyBy(docs, doc => doc._id.toHexString()))
         } catch (err2) {
           console.error('search from elasticsearch', this.task.name(), ids, err2)
           resolve({})
@@ -105,7 +105,7 @@ export default class Elasticsearch {
   }
 
   async _retrieve(): Promise<void> {
-    const ids = keys(this.retrieveBuffer)
+    const ids = _.take(_.keys(this.retrieveBuffer), 1024)
     if (ids.length === 0) {
       this.retrieveRunning = false
       return
@@ -143,7 +143,7 @@ export default class Elasticsearch {
               _id: new ObjectID(doc._id),
             }
           })
-          resolve(keyBy(docs, doc => doc._id.toHexString()))
+          resolve(_.keyBy(docs, doc => doc._id.toHexString()))
         } catch (err2) {
           console.error('retrieve from elasticsearch', this.task.name(), ids, err2)
           resolve({})

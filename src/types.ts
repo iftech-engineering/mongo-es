@@ -45,14 +45,14 @@ export type IRUpsert = {
   data: {
     [key: string]: any
   }
-  timestamp?: Timestamp
+  timestamp: number
 }
 
 export type IRDelete = {
   action: 'delete'
   id: string
   parent?: string
-  timestamp?: Timestamp
+  timestamp: number
 }
 
 export type IR = IRUpsert | IRDelete

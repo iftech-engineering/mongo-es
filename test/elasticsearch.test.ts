@@ -44,6 +44,7 @@ test('load', async t => {
       },
     },
     parent: undefined,
+    timestamp: 0
   }])
   const data = await client.get<any>({
     index: 'test',
