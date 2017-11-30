@@ -40,7 +40,6 @@
       "extract": {
         "db": "jike",
         "collection": "banners",
-        "query": {},
         "projection": {
           "name": 1,
           "shareCount.all": 1,

@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.1.0-alpha.3",
+  "version": "3.1.0",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@types/elasticsearch": "5.0.18",
-    "@types/lodash": "4.14.85",
+    "@types/lodash": "4.14.86",
     "@types/mongodb": "2.2.16",
     "@types/rx": "4.1.1",
     "ava": "0.24.0",
@@ -50,6 +50,6 @@
     "nodemon": "1.12.1",
     "source-map-support": "0.5.0",
     "ts-node": "3.3.0",
-    "typescript": "2.6.1"
+    "typescript": "2.6.2"
   }
 }

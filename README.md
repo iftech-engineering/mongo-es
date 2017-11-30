@@ -47,7 +47,7 @@ run(new Config(fs.readFileSync('config.json', 'utf8')))
 
 ### Scan phase
 
-scan entire database (or select with query) for existed documents
+scan entire database for existed documents
 
 ### Tail phase
 
@@ -82,7 +82,6 @@ Structure:
 ### mongodb
 
 - `url` - The connection URI string, eg: `mongodb://user:password@localhost:27017/db?replicaSet=rs0`.
-**notice**: `'db'` in url will be ignored.
 **notice**: must use a `admin` user to access oplog.
 - `options` - Connection settings, see: [MongoClient](http://mongodb.github.io/node-mongodb-native/2.1/api/MongoClient.html#.connect). (optional)
 
@@ -94,17 +93,14 @@ Structure:
 ### task.from
 
 - `phase` - `scan` or `tail`
-- `time` - tail oplog with query: `{ ts: { $gte: new Timestamp(0, new Date(time).getTime()) } }`
-- `id` - scan collection with query `{ _id: { $lte: id }}`
+- `time` - tail oplog with query: `{ ts: { $gte: new Timestamp(0, new Date(time).getTime() / 1000) } }`
+- `id` - scan collection with query `{ _id: { $gte: id }}`
 
 ### task.extract
 
 - `db` - Database name.
 - `collection` - Collection name in database.
-- `query` - Query selector, see [Query](https://docs.mongodb.com/manual/reference/operator/query/#query-selectors).
-**notice**: not work in [Tail phase](https://github.com/jike-engineering/mongo-es#tail-phase).
 - `projection` - Projection selector, see [Projection](https://docs.mongodb.com/manual/reference/operator/projection/).
-**notice**: works in [Tail phase](https://github.com/jike-engineering/mongo-es#tail-phase).
 
 ### task.transform
 

@@ -38,7 +38,6 @@ export class CheckPoint {
 export type ExtractTask = {
   db: string
   collection: string
-  query: any
   projection: {
     [key: string]: 1 | 0
   }

@@ -33,7 +33,6 @@ export default class MongoDB {
   getCollection(): Readable {
     return this.collection
       .find({
-        ...this.task.extract.query,
         _id: {
           $gte: this.task.from.id,
         },
