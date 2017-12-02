@@ -216,6 +216,74 @@ test('mergeOplogs update then update', t => {
   }])
 })
 
+test('mergeOplogs update then delete', t => {
+  const processor = new Processor({
+    transform: {
+      mapping: {
+        "field0": "field0",
+        "field1": "field1",
+      },
+    },
+  } as any, new Controls({}), null as any, null as any)
+  const oplogs = processor.mergeOplogs([{
+    ts: new Timestamp(0, 0),
+    op: 'u',
+    ns: 'example1',
+    o: {
+      field0: 1,
+      $set: {
+        field1: 1,
+      },
+    },
+    o2: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }, {
+    ts: new Timestamp(0, 1),
+    op: 'd',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }])
+  t.deepEqual(oplogs, [{
+    ts: new Timestamp(0, 1),
+    op: 'd',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }])
+})
+
+test('mergeOplogs insert then delete', t => {
+  const processor = new Processor({
+    transform: {
+      mapping: {
+        "field0": "field0",
+        "field1": "field1",
+      },
+    },
+  } as any, new Controls({}), null as any, null as any)
+  const oplogs = processor.mergeOplogs([{
+    ts: new Timestamp(0, 0),
+    op: 'i',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      field0: 1,
+    },
+  }, {
+    ts: new Timestamp(0, 1),
+    op: 'd',
+    ns: 'example1',
+    o: {
+      _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
+    },
+  }])
+  t.deepEqual(oplogs, [])
+})
+
 test('mergeOplogs insert then update then update', t => {
   const processor = new Processor({
     transform: {

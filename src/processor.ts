@@ -225,20 +225,26 @@ export default class Processor {
           break
         }
         case 'u': {
-          const doc = store[oplog.ns + oplog.o2._id.toString()]
-          if (doc && doc.op === 'i') {
-            doc.o = this.applyUpdate(doc.o as Document, oplog.o.$set, oplog.o.$unset)
-            doc.ts = oplog.ts
-          } else if (doc && doc.op === 'u') {
-            doc.o = _.merge(doc.o, oplog.o)
-            doc.ts = oplog.ts
+          const key = oplog.ns + oplog.o2._id.toString()
+          const log = store[key]
+          if (log && log.op === 'i') {
+            log.o = this.applyUpdate(log.o as Document, oplog.o.$set, oplog.o.$unset)
+            log.ts = oplog.ts
+          } else if (log && log.op === 'u') {
+            log.o = _.merge(log.o, oplog.o)
+            log.ts = oplog.ts
           } else {
-            store[oplog.ns + oplog.o2._id.toString()] = oplog
+            store[key] = oplog
           }
           break
         }
         case 'd': {
-          delete store[oplog.ns + oplog.o._id.toString()]
+          const key = oplog.ns + oplog.o._id.toString()
+          if (store[key] && store[key].op === 'i') {
+            delete store[key]
+          } else {
+            store[key] = oplog
+          }
           break
         }
       }
