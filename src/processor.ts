@@ -262,7 +262,7 @@ export default class Processor {
             return
           }
           try {
-            await this.load(irs)
+            await this.load(_.compact(irs.map(ir => Task.onTransformCallback(this.task, ir))))
             await Task.saveCheckpoint(this.task.name(), new CheckPoint({
               phase: 'scan',
               id: irs[0].id,
@@ -315,7 +315,7 @@ export default class Processor {
         return await this.oplog(oplog)
       })))
       if (irs.length > 0) {
-        await this.load(irs)
+        await this.load(_.compact(irs.map(ir => Task.onTransformCallback(this.task, ir))))
         await Task.saveCheckpoint(this.task.name(), new CheckPoint({
           phase: 'tail',
           time: Date.now() - 1000 * 10,
