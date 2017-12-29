@@ -324,6 +324,7 @@ export default class Processor {
       }
     } catch (err) {
       console.warn('tail', this.task.name(), err.message)
+      process.exit(1)
     }
   }
 }
