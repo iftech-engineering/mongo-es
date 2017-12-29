@@ -1,6 +1,8 @@
 import { ObjectID, MongoClientOptions } from 'mongodb'
 import { ConfigOptions, IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
 
+import { IR } from './types'
+
 export class MongoConfig {
   url: string
   options?: MongoClientOptions
@@ -59,6 +61,7 @@ export class Task {
   load: LoadTask
   static onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>
   static onLoadCallback: (name: string) => Promise<any | null>
+  static onTransformCallback: (task: Task, ir: IR) => IR | null
 
   constructor({ from, extract, transform, load }) {
     this.from = new CheckPoint(from)
@@ -83,6 +86,10 @@ export class Task {
 
   static onLoadCheckpoint(onLoadCallback: (name: string) => Promise<any | null>) {
     Task.onLoadCallback = onLoadCallback
+  }
+
+  static onTransform(onTransformCallback: (task: Task, ir: IR) => IR | null) {
+    Task.onTransformCallback = onTransformCallback
   }
 
   static async saveCheckpoint(name: string, checkPoint: CheckPoint): Promise<void> {
