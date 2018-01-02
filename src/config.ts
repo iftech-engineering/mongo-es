@@ -113,11 +113,13 @@ export class Task {
 
 export class Controls {
   mongodbReadCapacity: number
+  elasticsearchBulkInterval: number
   elasticsearchBulkSize: number
   indexNameSuffix: string
 
-  constructor({ mongodbReadCapacity = Infinity, elasticsearchBulkSize = 5000, indexNameSuffix = '' }) {
+  constructor({ mongodbReadCapacity = Infinity, elasticsearchBulkInterval = 5000, elasticsearchBulkSize = 5000, indexNameSuffix = '' }) {
     this.mongodbReadCapacity = mongodbReadCapacity
+    this.elasticsearchBulkInterval = elasticsearchBulkInterval
     this.elasticsearchBulkSize = elasticsearchBulkSize
     this.indexNameSuffix = indexNameSuffix
   }

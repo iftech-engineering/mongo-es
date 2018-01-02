@@ -76,6 +76,7 @@ Structure:
 ### controls
 
 - `mongodbReadCapacity` - Max docs read per second (default: `10000`). (optional)
+- `elasticsearchBulkInterval` - Max bluk interval per request (default: `5000`). (optional)
 - `elasticsearchBulkSize` - Max bluk size per request (default: `5000`). (optional)
 - `indexNameSuffix` - Index name suffix, for index version control. (optional)
 

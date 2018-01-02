@@ -255,7 +255,7 @@ export default class Processor {
   async scanDocument(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.scan()
-        .bufferWithTimeOrCount(2000, this.controls.elasticsearchBulkSize)
+        .bufferWithTimeOrCount(this.controls.elasticsearchBulkInterval, this.controls.elasticsearchBulkSize)
         .map(docs => _.compact<IR>(_.map(docs, doc => this.transformer('upsert', doc))))
         .subscribe(async (irs) => {
           if (irs.length === 0) {
@@ -278,7 +278,7 @@ export default class Processor {
   async tailOpLog(): Promise<never> {
     return new Promise<never>((resolve, reject) => {
       this.tail()
-        .bufferWithTimeOrCount(2000, this.controls.elasticsearchBulkSize)
+        .bufferWithTimeOrCount(this.controls.elasticsearchBulkInterval, this.controls.elasticsearchBulkSize)
         .subscribe((oplogs) => {
           this.queue.push(oplogs)
           if (!this.running) {
@@ -324,7 +324,6 @@ export default class Processor {
       }
     } catch (err) {
       console.warn('tail', this.task.name(), err.message)
-      process.exit(1)
     }
   }
 }
