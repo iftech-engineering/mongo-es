@@ -79,9 +79,6 @@ export default class Elasticsearch {
           const docs = response.hits.hits.map((hit: any) => {
             const doc = hit._source
             doc._id = new ObjectID(hit._id)
-            if (this.task.transform.parent && hit._parent) {
-              doc[this.task.transform.parent] = new ObjectID(hit._parent)
-            }
             return doc as Document
           })
           resolve(_.keyBy(docs, doc => doc._id.toHexString()))

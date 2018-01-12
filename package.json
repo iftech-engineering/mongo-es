@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -8,21 +8,23 @@
     "connector",
     "etl"
   ],
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
-  "typings": "./dist/src/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "typings": "dist/src/index.d.ts",
   "scripts": {
-    "start": "node ./dist/src/main.js",
-    "build": "rm -rf ./dist && tsc",
-    "dev": "rm -rf ./dist && tsc -w & NODE_ENV=dev nodemon ./dist/src/main.js",
-    "test": "ava-ts test",
+    "start": "node dist/src/main.js",
+    "compile": "tsc",
+    "build": "npm run clean && npm run compile",
+    "dev": "npm run clean && tsc -w & NODE_ENV=dev nodemon dist/src/main.js",
+    "test": "npm run compile && ava dist/test",
+    "clean": "rm -rf dist",
     "prepublishOnly": "npm run build"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.com"
   },
   "bin": {
-    "mongo-es": "./dist/src/main.js"
+    "mongo-es": "dist/src/main.js"
   },
   "repository": {
     "type": "git",
@@ -37,19 +39,17 @@
   "dependencies": {
     "elasticsearch": "14.0.0",
     "lodash": "4.17.4",
-    "mongodb": "2.2.33",
+    "mongodb": "3.0.1",
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.18",
-    "@types/lodash": "4.14.86",
-    "@types/mongodb": "2.2.16",
+    "@types/elasticsearch": "5.0.19",
+    "@types/lodash": "4.14.92",
+    "@types/mongodb": "3.0.0",
     "@types/rx": "4.1.1",
     "ava": "0.24.0",
-    "ava-ts": "0.23.0",
-    "nodemon": "1.12.1",
+    "nodemon": "1.14.11",
     "source-map-support": "0.5.0",
-    "ts-node": "3.3.0",
     "typescript": "2.6.2"
   }
 }

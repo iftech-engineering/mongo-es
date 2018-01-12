@@ -11,7 +11,10 @@ Task.onSaveCheckpoint((name, checkpoint) => {
 })
 
 Task.onLoadCheckpoint((name) => {
-  return redis.get(`mongo-es:${name}`).then(JSON.parse)
+  return redis.get(`mongo-es:${name}`).then(str => {
+    console.log('loaded', `mongo-es:${name}`, str)
+    return JSON.parse(str)
+  })
 })
 
 run(new Config(fs.readFileSync('examples/config.json', 'utf8')))

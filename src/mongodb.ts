@@ -1,4 +1,3 @@
-import { parse, format } from 'url'
 import { Readable } from 'stream'
 import * as _ from 'lodash'
 
@@ -20,12 +19,9 @@ export default class MongoDB {
   }
 
   static async init(mongodb: MongoConfig, task: Task): Promise<MongoDB> {
-    const url = parse(mongodb.url)
-    url.pathname = `/${task.extract.db}`
-    const collection = (await MongoClient.connect(format(url), mongodb.options)).collection(task.extract.collection)
+    const collection = (await MongoClient.connect(mongodb.url, mongodb.options)).db(task.extract.db).collection(task.extract.collection)
     if (!MongoDB.oplog) {
-      url.pathname = '/local'
-      MongoDB.oplog = (await MongoClient.connect(format(url), mongodb.options)).collection('oplog.rs')
+      MongoDB.oplog = (await MongoClient.connect(mongodb.url, mongodb.options)).db('local').collection('oplog.rs')
     }
     return new MongoDB(collection, task)
   }
