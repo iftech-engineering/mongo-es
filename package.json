@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -18,6 +18,7 @@
     "dev": "npm run clean && tsc -w & NODE_ENV=dev nodemon dist/src/main.js",
     "test": "npm run compile && ava dist/test",
     "clean": "rm -rf dist",
+    "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "prepublishOnly": "npm run build"
   },
   "publishConfig": {
@@ -37,19 +38,19 @@
   },
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
-    "elasticsearch": "14.0.0",
-    "lodash": "4.17.4",
+    "elasticsearch": "14.2.1",
+    "lodash": "4.17.5",
     "mongodb": "3.0.1",
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.19",
-    "@types/lodash": "4.14.92",
-    "@types/mongodb": "3.0.0",
+    "@types/elasticsearch": "5.0.22",
+    "@types/lodash": "4.14.105",
+    "@types/mongodb": "3.0.1",
     "@types/rx": "4.1.1",
-    "ava": "0.24.0",
-    "nodemon": "1.14.11",
-    "source-map-support": "0.5.0",
-    "typescript": "2.6.2"
+    "ava": "0.25.0",
+    "nodemon": "1.17.2",
+    "source-map-support": "0.5.4",
+    "typescript": "2.7.2"
   }
 }

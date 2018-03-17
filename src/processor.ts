@@ -75,8 +75,11 @@ export default class Processor {
     }
   }
 
-  applyUpdate(doc: Document, set: any = {}, unset: any = {}): Document {
+  applyUpdate(doc: Document, set: any = {}, unset: any = {}, notTransform: boolean = false): Document {
     _.forEach(this.task.transform.mapping, (value, key) => {
+      if (notTransform) {
+        key = value
+      }
       if (_.get(unset, key)) {
         _.unset(doc, value)
       }
@@ -156,7 +159,7 @@ export default class Processor {
             ? await this.elasticsearch.search(oplog.o2._id)
             : await this.elasticsearch.retrieve(oplog.o2._id)
           const doc = old
-            ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset)
+            ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset, true)
             : await this.mongodb.retrieve(oplog.o2._id)
           return doc ? this.transformer('upsert', doc, oplog.ts) : null
         }
