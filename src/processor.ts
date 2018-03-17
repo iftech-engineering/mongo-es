@@ -48,7 +48,7 @@ export default class Processor {
     return stream
   }
 
-  transformer(action: 'upsert' | 'delete', doc: Document, timestamp?: Timestamp): IR | null {
+  transformer(action: 'upsert' | 'delete', doc: Document, timestamp?: Timestamp, notTransform: boolean = false): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
@@ -58,6 +58,9 @@ export default class Processor {
       }
     }
     const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
+      if (notTransform) {
+        key = value
+      }
       if (_.has(doc, key)) {
         _.set(obj, value, _.get(doc, key))
       }
@@ -161,7 +164,7 @@ export default class Processor {
           const doc = old
             ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset, true)
             : await this.mongodb.retrieve(oplog.o2._id)
-          return doc ? this.transformer('upsert', doc, oplog.ts) : null
+          return doc ? this.transformer('upsert', doc, oplog.ts, !!old) : null
         }
         case 'd': {
           if (_.size(oplog.o) !== 1 || !oplog.o._id) {
