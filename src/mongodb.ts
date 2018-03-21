@@ -45,7 +45,7 @@ export default class MongoDB {
           $gte: new Timestamp(0, this.task.from.time.getTime() / 1000),
         },
         fromMigrate: {
-          $exists: false,
+          $ne: true,
         },
       }, {
           tailable: true,
