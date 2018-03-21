@@ -1,7 +1,12 @@
 import { Timestamp, ObjectID } from 'mongodb'
 
-export type Document = {
+export type MongoDoc = {
   _id: ObjectID
+  [key: string]: any
+}
+
+export type ESDoc = {
+  _id: string
   [key: string]: any
 }
 
