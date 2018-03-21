@@ -21,8 +21,8 @@ export type OplogInsert = {
 export type OplogUpdate = {
   op: 'u'
   o: {
-    $set?: any
-    $unset?: any
+    $set?: { [key: string]: any }
+    $unset?: { [key: string]: any }
     [key: string]: any
   }
   o2: {

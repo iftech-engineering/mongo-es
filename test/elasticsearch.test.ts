@@ -16,8 +16,8 @@ const task: Task = new Task({
   extract: {},
   transform: {
     mapping: {
-      "field0.field1": "field0.field1",
-      "field0.field2": "field0.field2"
+      "field0.field1": "field1",
+      "field0.field2": "field2"
     }
   },
   load: {
@@ -38,10 +38,8 @@ test('load', async t => {
     action: 'upsert',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     data: {
-      field0: {
-        field1: 1,
-        field2: 2,
-      },
+      field1: 1,
+      field2: 2,
     },
     parent: undefined,
     timestamp: 0
@@ -58,10 +56,8 @@ test('load', async t => {
     _version: 1,
     found: true,
     _source: {
-      field0: {
-        field1: 1,
-        field2: 2,
-      },
+      field1: 1,
+      field2: 2,
     }
   })
 })

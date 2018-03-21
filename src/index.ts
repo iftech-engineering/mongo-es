@@ -32,6 +32,7 @@ export async function run(config: Config): Promise<void> {
     }
     console.log('tail', task.name(), 'from', task.from.time)
     processor.tailOpLog().catch(err => {
+      console.error('tailOpLog', err)
       process.exit(0)
     })
   }

@@ -78,7 +78,7 @@ export default class Processor {
     }
   }
 
-  applyUpdateMongoDoc(doc: MongoDoc, set: any = {}, unset: any = {}): MongoDoc {
+  applyUpdateMongoDoc(doc: MongoDoc, set: { [key: string]: any } = {}, unset: { [key: string]: any } = {}): MongoDoc {
     _.forEach(this.task.transform.mapping, (ignored, key) => {
       if (_.get(unset, key)) {
         _.unset(doc, key)
@@ -90,13 +90,13 @@ export default class Processor {
     return doc
   }
 
-  applyUpdateESDoc(doc: ESDoc, set: any = {}, unset: any = {}): ESDoc {
-    _.forEach(this.task.transform.mapping, (value) => {
-      if (_.get(unset, value)) {
+  applyUpdateESDoc(doc: ESDoc, set: { [key: string]: any } = {}, unset: { [key: string]: any } = {}): ESDoc {
+    _.forEach(this.task.transform.mapping, (value, key) => {
+      if (_.get(unset, key)) {
         _.unset(doc, value)
       }
-      if (_.has(set, value)) {
-        _.set(doc, value, _.get(set, value))
+      if (_.has(set, key)) {
+        _.set(doc, value, _.get(set, key))
       }
     })
     return doc

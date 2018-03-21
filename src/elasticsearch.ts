@@ -140,7 +140,7 @@ export default class Elasticsearch {
   }
 
   _mapResponse(hit: { _id: string, _parent?: string, _source: ESDoc }): ESDoc {
-    const doc = hit._source
+    const doc = hit._source || {}
     doc._id = hit._id
     if (this.task.transform.parent && hit._parent) {
       _.set(doc, this.task.transform.parent, hit._parent)
