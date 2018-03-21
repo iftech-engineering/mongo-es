@@ -3,14 +3,14 @@ import * as _ from 'lodash'
 
 import { Timestamp, Cursor, MongoClient, ObjectID, Collection } from 'mongodb'
 
-import { Document } from './types'
+import { MongoDoc } from './types'
 import { Task, MongoConfig } from './config'
 
 export default class MongoDB {
   static oplog: Collection
   collection: Collection
   task: Task
-  retrieveBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
+  retrieveBuffer: { [id: string]: ((doc: MongoDoc | null) => void)[] } = {}
   retrieveRunning: boolean = false
 
   private constructor(collection: Collection, task: Task) {
@@ -48,15 +48,15 @@ export default class MongoDB {
           $exists: false,
         },
       }, {
-        tailable: true,
-        oplogReplay: true,
-        noCursorTimeout: true,
-        awaitData: true,
-      })
+          tailable: true,
+          oplogReplay: true,
+          noCursorTimeout: true,
+          awaitData: true,
+        })
   }
 
-  async retrieve(id: ObjectID): Promise<Document | null> {
-    return new Promise<Document | null>((resolve) => {
+  async retrieve(id: ObjectID): Promise<MongoDoc | null> {
+    return new Promise<MongoDoc | null>((resolve) => {
       this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
@@ -83,9 +83,9 @@ export default class MongoDB {
     setTimeout(this._retrieve.bind(this), 1000)
   }
 
-  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
+  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: MongoDoc }> {
     try {
-      const docs = await this.collection.find<Document>({
+      const docs = await this.collection.find<MongoDoc>({
         _id: {
           $in: ids.map(ObjectID.createFromHexString),
         },

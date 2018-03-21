@@ -1,7 +1,7 @@
 import test from 'ava'
 import { ObjectID, Timestamp } from 'mongodb'
 
-import { OpLog, Document, IR } from '../src/types'
+import { OpLog, MongoDoc, IR } from '../src/types'
 import { Controls, Task } from '../src/config'
 import Processor from '../src/processor'
 
@@ -49,7 +49,7 @@ const task2: Task = new Task({
   load: {},
 })
 
-const doc: Document = {
+const doc: MongoDoc = {
   _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
   field0: {
     field1: 1,

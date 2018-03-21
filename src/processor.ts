@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import { Timestamp } from 'mongodb'
 
 import { Task, Controls, CheckPoint } from './config'
-import { IR, Document, OpLog } from './types'
+import { IR, MongoDoc, OpLog } from './types'
 import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
 
@@ -48,7 +48,7 @@ export default class Processor {
     return stream
   }
 
-  transformer(action: 'upsert' | 'delete', doc: Document, timestamp?: Timestamp, notTransform: boolean = false): IR | null {
+  transformer(action: 'upsert' | 'delete', doc: MongoDoc, timestamp?: Timestamp, notTransform: boolean = false): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
@@ -78,7 +78,7 @@ export default class Processor {
     }
   }
 
-  applyUpdate(doc: Document, set: any = {}, unset: any = {}, notTransform: boolean = false): Document {
+  applyUpdate(doc: MongoDoc, set: any = {}, unset: any = {}, notTransform: boolean = false): MongoDoc {
     _.forEach(this.task.transform.mapping, (value, key) => {
       if (notTransform) {
         key = value
@@ -103,11 +103,11 @@ export default class Processor {
     return ignore
   }
 
-  scan(): Observable<Document> {
-    return Observable.create<Document>((observer) => {
+  scan(): Observable<MongoDoc> {
+    return Observable.create<MongoDoc>((observer) => {
       try {
         const stream = Processor.controlReadCapacity(this.mongodb.getCollection())
-        stream.addListener('data', (doc: Document) => {
+        stream.addListener('data', (doc: MongoDoc) => {
           observer.onNext(doc)
         })
         stream.addListener('error', (err: Error) => {
@@ -234,7 +234,7 @@ export default class Processor {
           const key = oplog.ns + oplog.o2._id.toString()
           const log = store[key]
           if (log && log.op === 'i') {
-            log.o = this.applyUpdate(log.o as Document, oplog.o.$set, oplog.o.$unset)
+            log.o = this.applyUpdate(log.o as MongoDoc, oplog.o.$set, oplog.o.$unset)
             log.ts = oplog.ts
           } else if (log && log.op === 'u') {
             log.o = _.merge(log.o, oplog.o)

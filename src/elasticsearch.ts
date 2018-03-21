@@ -2,15 +2,15 @@ import { Client, BulkIndexDocumentsParams } from 'elasticsearch'
 import { ObjectID } from 'mongodb'
 import * as _ from 'lodash'
 
-import { Document } from './types'
+import { MongoDoc } from './types'
 import { ElasticsearchConfig, Task } from './config'
 
 export default class Elasticsearch {
   static client: Client
   task: Task
-  searchBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
+  searchBuffer: { [id: string]: ((doc: MongoDoc | null) => void)[] } = {}
   searchRunning: boolean = false
-  retrieveBuffer: { [id: string]: ((doc: Document | null) => void)[] } = {}
+  retrieveBuffer: { [id: string]: ((doc: MongoDoc | null) => void)[] } = {}
   retrieveRunning: boolean = false
 
   constructor(elasticsearch: ElasticsearchConfig, task: Task) {
@@ -28,8 +28,8 @@ export default class Elasticsearch {
     })
   }
 
-  async search(id: ObjectID): Promise<Document | null> {
-    return new Promise<Document | null>((resolve) => {
+  async search(id: ObjectID): Promise<MongoDoc | null> {
+    return new Promise<MongoDoc | null>((resolve) => {
       this.searchBuffer[id.toHexString()] = this.searchBuffer[id.toHexString()] || []
       this.searchBuffer[id.toHexString()].push(resolve)
       if (!this.searchRunning) {
@@ -56,9 +56,9 @@ export default class Elasticsearch {
     setTimeout(this._search.bind(this), 1000)
   }
 
-  async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
-    return new Promise<{ [id: string]: Document }>((resolve) => {
-      Elasticsearch.client.search<Document>({
+  async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: MongoDoc }> {
+    return new Promise<{ [id: string]: MongoDoc }>((resolve) => {
+      Elasticsearch.client.search<MongoDoc>({
         index: this.task.load.index,
         type: this.task.load.type,
         body: {
@@ -82,7 +82,7 @@ export default class Elasticsearch {
             if (this.task.transform.parent && hit._parent) {
               _.set(doc, this.task.transform.parent, new ObjectID(hit._parent))
             }
-            return doc as Document
+            return doc as MongoDoc
           })
           resolve(_.keyBy(docs, doc => doc._id.toHexString()))
         } catch (err2) {
@@ -93,8 +93,8 @@ export default class Elasticsearch {
     })
   }
 
-  async retrieve(id: ObjectID): Promise<Document | null> {
-    return new Promise<Document | null>((resolve) => {
+  async retrieve(id: ObjectID): Promise<MongoDoc | null> {
+    return new Promise<MongoDoc | null>((resolve) => {
       this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
@@ -121,9 +121,9 @@ export default class Elasticsearch {
     setTimeout(this._retrieve.bind(this), 1000)
   }
 
-  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: Document }> {
-    return new Promise<{ [id: string]: Document }>((resolve) => {
-      Elasticsearch.client.mget<Document>({
+  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: MongoDoc }> {
+    return new Promise<{ [id: string]: MongoDoc }>((resolve) => {
+      Elasticsearch.client.mget<MongoDoc>({
         index: this.task.load.index as string,
         type: this.task.load.type,
         body: {
