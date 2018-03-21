@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.2.5-alpha.2",
+  "version": "3.2.5",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
