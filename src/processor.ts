@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import { Timestamp } from 'mongodb'
 
 import { Task, Controls, CheckPoint } from './config'
-import { IR, MongoDoc, OpLog } from './types'
+import { IR, MongoDoc, ESDoc, OpLog } from './types'
 import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
 
@@ -48,17 +48,17 @@ export default class Processor {
     return stream
   }
 
-  transformer(action: 'upsert' | 'delete', doc: MongoDoc, timestamp?: Timestamp, notTransform: boolean = false): IR | null {
+  transformer(action: 'upsert' | 'delete', doc: MongoDoc | ESDoc, timestamp?: Timestamp, isESDoc: boolean = false): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
-        id: doc._id.toHexString(),
+        id: doc._id.toString(),
         parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
         timestamp: timestamp ? timestamp.getHighBits() : 0,
       }
     }
     const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
-      if (notTransform) {
+      if (isESDoc) {
         key = value
       }
       if (_.has(doc, key)) {
@@ -71,23 +71,32 @@ export default class Processor {
     }
     return {
       action: 'upsert',
-      id: doc._id.toHexString(),
+      id: doc._id.toString(),
       data,
       parent: this.task.transform.parent && _.get(doc, this.task.transform.parent),
       timestamp: timestamp ? timestamp.getHighBits() : 0,
     }
   }
 
-  applyUpdate(doc: MongoDoc, set: any = {}, unset: any = {}, notTransform: boolean = false): MongoDoc {
-    _.forEach(this.task.transform.mapping, (value, key) => {
-      if (notTransform) {
-        key = value
-      }
+  applyUpdateMongoDoc(doc: MongoDoc, set: any = {}, unset: any = {}): MongoDoc {
+    _.forEach(this.task.transform.mapping, (ignored, key) => {
       if (_.get(unset, key)) {
-        _.unset(doc, value)
+        _.unset(doc, key)
       }
       if (_.has(set, key)) {
-        _.set(doc, value, _.get(set, key))
+        _.set(doc, key, _.get(set, key))
+      }
+    })
+    return doc
+  }
+
+  applyUpdateESDoc(doc: ESDoc, set: any = {}, unset: any = {}): ESDoc {
+    _.forEach(this.task.transform.mapping, (value) => {
+      if (_.get(unset, value)) {
+        _.unset(doc, value)
+      }
+      if (_.has(set, value)) {
+        _.set(doc, value, _.get(set, value))
       }
     })
     return doc
@@ -159,10 +168,10 @@ export default class Processor {
             }, oplog.ts)
           }
           const old = this.task.transform.parent
-            ? await this.elasticsearch.search(oplog.o2._id)
-            : await this.elasticsearch.retrieve(oplog.o2._id)
+            ? await this.elasticsearch.search(oplog.o2._id.toHexString())
+            : await this.elasticsearch.retrieve(oplog.o2._id.toHexString())
           const doc = old
-            ? this.applyUpdate(old, oplog.o.$set, oplog.o.$unset, true)
+            ? this.applyUpdateESDoc(old, oplog.o.$set, oplog.o.$unset)
             : await this.mongodb.retrieve(oplog.o2._id)
           return doc ? this.transformer('upsert', doc, oplog.ts, !!old) : null
         }
@@ -172,7 +181,7 @@ export default class Processor {
             return null
           }
           const doc = this.task.transform.parent
-            ? await this.elasticsearch.search(oplog.o._id)
+            ? await this.elasticsearch.search(oplog.o._id.toHexString())
             : oplog.o
           console.debug(doc)
           return doc ? this.transformer('delete', doc, oplog.ts) : null
@@ -234,7 +243,7 @@ export default class Processor {
           const key = oplog.ns + oplog.o2._id.toString()
           const log = store[key]
           if (log && log.op === 'i') {
-            log.o = this.applyUpdate(log.o as MongoDoc, oplog.o.$set, oplog.o.$unset)
+            log.o = this.applyUpdateMongoDoc(log.o, oplog.o.$set, oplog.o.$unset)
             log.ts = oplog.ts
           } else if (log && log.op === 'u') {
             log.o = _.merge(log.o, oplog.o)

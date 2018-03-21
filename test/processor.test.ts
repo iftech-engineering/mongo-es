@@ -101,7 +101,7 @@ test('transformer delete', t => {
 
 test('applyUpdate', t => {
   const transform = new Processor(task, new Controls({}), null as any, null as any)
-  t.deepEqual(transform.applyUpdate(doc, oplog.o.$set, oplog.o.$unset), {
+  t.deepEqual(transform.applyUpdateMongoDoc(doc, oplog.o.$set, oplog.o.$unset), {
     _id: new ObjectID("aaaaaaaaaaaaaaaaaaaaaaaa"),
     field0: {
       field1: 'set nested field',

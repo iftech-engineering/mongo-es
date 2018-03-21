@@ -5,6 +5,11 @@ export type MongoDoc = {
   [key: string]: any
 }
 
+export type ESDoc = {
+  _id: string
+  [key: string]: any
+}
+
 export type OplogInsert = {
   op: 'i'
   o: {

@@ -1,16 +1,15 @@
 import { Client, BulkIndexDocumentsParams } from 'elasticsearch'
-import { ObjectID } from 'mongodb'
 import * as _ from 'lodash'
 
-import { MongoDoc } from './types'
+import { ESDoc } from './types'
 import { ElasticsearchConfig, Task } from './config'
 
 export default class Elasticsearch {
   static client: Client
   task: Task
-  searchBuffer: { [id: string]: ((doc: MongoDoc | null) => void)[] } = {}
+  searchBuffer: { [id: string]: ((doc: ESDoc | null) => void)[] } = {}
   searchRunning: boolean = false
-  retrieveBuffer: { [id: string]: ((doc: MongoDoc | null) => void)[] } = {}
+  retrieveBuffer: { [id: string]: ((doc: ESDoc | null) => void)[] } = {}
   retrieveRunning: boolean = false
 
   constructor(elasticsearch: ElasticsearchConfig, task: Task) {
@@ -28,10 +27,10 @@ export default class Elasticsearch {
     })
   }
 
-  async search(id: ObjectID): Promise<MongoDoc | null> {
-    return new Promise<MongoDoc | null>((resolve) => {
-      this.searchBuffer[id.toHexString()] = this.searchBuffer[id.toHexString()] || []
-      this.searchBuffer[id.toHexString()].push(resolve)
+  async search(id: string): Promise<ESDoc | null> {
+    return new Promise<ESDoc | null>((resolve) => {
+      this.searchBuffer[id] = this.searchBuffer[id] || []
+      this.searchBuffer[id].push(resolve)
       if (!this.searchRunning) {
         this.searchRunning = true
         setTimeout(this._search.bind(this), 1000)
@@ -56,9 +55,9 @@ export default class Elasticsearch {
     setTimeout(this._search.bind(this), 1000)
   }
 
-  async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: MongoDoc }> {
-    return new Promise<{ [id: string]: MongoDoc }>((resolve) => {
-      Elasticsearch.client.search<MongoDoc>({
+  async _searchBatchSafe(ids: string[]): Promise<{ [id: string]: ESDoc }> {
+    return new Promise<{ [id: string]: ESDoc }>((resolve) => {
+      Elasticsearch.client.search<ESDoc>({
         index: this.task.load.index,
         type: this.task.load.type,
         body: {
@@ -76,15 +75,8 @@ export default class Elasticsearch {
             return
           }
           console.debug('search from elasticsearch', response)
-          const docs = response.hits.hits.map((hit: any) => {
-            const doc = hit._source
-            doc._id = new ObjectID(hit._id)
-            if (this.task.transform.parent && hit._parent) {
-              _.set(doc, this.task.transform.parent, new ObjectID(hit._parent))
-            }
-            return doc as MongoDoc
-          })
-          resolve(_.keyBy(docs, doc => doc._id.toHexString()))
+          const docs = response.hits.hits.map(this._mapResponse)
+          resolve(_.keyBy(docs, doc => doc._id))
         } catch (err2) {
           console.error('search from elasticsearch', this.task.name(), ids, err2)
           resolve({})
@@ -93,10 +85,10 @@ export default class Elasticsearch {
     })
   }
 
-  async retrieve(id: ObjectID): Promise<MongoDoc | null> {
-    return new Promise<MongoDoc | null>((resolve) => {
-      this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
-      this.retrieveBuffer[id.toHexString()].push(resolve)
+  async retrieve(id: string): Promise<ESDoc | null> {
+    return new Promise<ESDoc | null>((resolve) => {
+      this.retrieveBuffer[id] = this.retrieveBuffer[id] || []
+      this.retrieveBuffer[id].push(resolve)
       if (!this.retrieveRunning) {
         this.retrieveRunning = true
         setTimeout(this._retrieve.bind(this), 1000)
@@ -121,9 +113,9 @@ export default class Elasticsearch {
     setTimeout(this._retrieve.bind(this), 1000)
   }
 
-  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: MongoDoc }> {
-    return new Promise<{ [id: string]: MongoDoc }>((resolve) => {
-      Elasticsearch.client.mget<MongoDoc>({
+  async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: ESDoc }> {
+    return new Promise<{ [id: string]: ESDoc }>((resolve) => {
+      Elasticsearch.client.mget<ESDoc>({
         index: this.task.load.index as string,
         type: this.task.load.type,
         body: {
@@ -137,18 +129,22 @@ export default class Elasticsearch {
             return
           }
           console.debug('retrieve from elasticsearch', response)
-          const docs = response.docs.map(doc => {
-            return {
-              ...doc._source,
-              _id: new ObjectID(doc._id),
-            }
-          })
-          resolve(_.keyBy(docs, doc => doc._id.toHexString()))
+          const docs = response.docs.map(this._mapResponse)
+          resolve(_.keyBy(docs, doc => doc._id))
         } catch (err2) {
           console.error('retrieve from elasticsearch', this.task.name(), ids, err2)
           resolve({})
         }
       })
     })
+  }
+
+  _mapResponse(hit: { _id: string, _parent?: string, _source: ESDoc }): ESDoc {
+    const doc = hit._source
+    doc._id = hit._id
+    if (this.task.transform.parent && hit._parent) {
+      _.set(doc, this.task.transform.parent, hit._parent)
+    }
+    return doc
   }
 }
