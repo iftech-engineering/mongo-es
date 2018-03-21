@@ -75,7 +75,7 @@ export default class Elasticsearch {
             return
           }
           console.debug('search from elasticsearch', response)
-          const docs = response.hits.hits.map(this._mapResponse)
+          const docs: ESDoc[] = response.hits.hits.map(this._mapResponse.bind(this))
           resolve(_.keyBy(docs, doc => doc._id))
         } catch (err2) {
           console.error('search from elasticsearch', this.task.name(), ids, err2)
@@ -129,7 +129,7 @@ export default class Elasticsearch {
             return
           }
           console.debug('retrieve from elasticsearch', response)
-          const docs = response.docs.map(this._mapResponse)
+          const docs: ESDoc[] = response.docs.map(this._mapResponse.bind(this))
           resolve(_.keyBy(docs, doc => doc._id))
         } catch (err2) {
           console.error('retrieve from elasticsearch', this.task.name(), ids, err2)
