@@ -16,9 +16,9 @@ const task: Task = new Task({
   extract: {},
   transform: {
     mapping: {
-      "field0.field1": "field1",
-      "field0.field2": "field2"
-    }
+      'field0.field1': 'field1',
+      'field0.field2': 'field2',
+    },
   },
   load: {
     index: 'test',
@@ -27,23 +27,28 @@ const task: Task = new Task({
 })
 
 test('load', async t => {
-  const elasticsearch = new Elasticsearch({
-    options: {
-      host: 'localhost:9200',
+  const elasticsearch = new Elasticsearch(
+    {
+      options: {
+        host: 'localhost:9200',
+      },
+      indices: [],
     },
-    indices: [],
-  }, task)
+    task,
+  )
   const processor = new Processor(task, new Controls({}), null as any, elasticsearch)
-  await processor.load([{
-    action: 'upsert',
-    id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
-    data: {
-      field1: 1,
-      field2: 2,
+  await processor.load([
+    {
+      action: 'upsert',
+      id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+      data: {
+        field1: 1,
+        field2: 2,
+      },
+      parent: undefined,
+      timestamp: 0,
     },
-    parent: undefined,
-    timestamp: 0
-  }])
+  ])
   const data = await client.get<any>({
     index: 'test',
     type: 'test',
@@ -58,7 +63,7 @@ test('load', async t => {
     _source: {
       field1: 1,
       field2: 2,
-    }
+    },
   })
 })
 
@@ -70,6 +75,6 @@ test.before('create index', t => {
 
 test.after.always('delete index', t => {
   return client.indices.delete({
-    index: 'test'
+    index: 'test',
   })
 })

@@ -19,9 +19,19 @@ export default class MongoDB {
   }
 
   static async init(mongodb: MongoConfig, task: Task): Promise<MongoDB> {
-    const collection = (await MongoClient.connect(mongodb.url, mongodb.options)).db(task.extract.db).collection(task.extract.collection)
+    const collection = (await MongoClient.connect(
+      mongodb.url,
+      mongodb.options,
+    ))
+      .db(task.extract.db)
+      .collection(task.extract.collection)
     if (!MongoDB.oplog) {
-      MongoDB.oplog = (await MongoClient.connect(mongodb.url, mongodb.options)).db('local').collection('oplog.rs')
+      MongoDB.oplog = (await MongoClient.connect(
+        mongodb.url,
+        mongodb.options,
+      ))
+        .db('local')
+        .collection('oplog.rs')
     }
     return new MongoDB(collection, task)
   }
@@ -47,16 +57,15 @@ export default class MongoDB {
         fromMigrate: {
           $ne: true,
         },
-      }, {
-          tailable: true,
-          oplogReplay: true,
-          noCursorTimeout: true,
-          awaitData: true,
-        })
+      })
+      .addCursorFlag('tailable', true)
+      .addCursorFlag('oplogReplay', true)
+      .addCursorFlag('noCursorTimeout', true)
+      .addCursorFlag('awaitData', true)
   }
 
   async retrieve(id: ObjectID): Promise<MongoDoc | null> {
-    return new Promise<MongoDoc | null>((resolve) => {
+    return new Promise<MongoDoc | null>(resolve => {
       this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
@@ -73,10 +82,10 @@ export default class MongoDB {
       return
     }
     const docs = await this._retrieveBatchSafe(ids)
-    ids.forEach((id) => {
+    ids.forEach(id => {
       const cbs = this.retrieveBuffer[id]
       delete this.retrieveBuffer[id]
-      cbs.forEach((cb) => {
+      cbs.forEach(cb => {
         cb(docs[id] || null)
       })
     })
@@ -85,11 +94,13 @@ export default class MongoDB {
 
   async _retrieveBatchSafe(ids: string[]): Promise<{ [id: string]: MongoDoc }> {
     try {
-      const docs = await this.collection.find<MongoDoc>({
-        _id: {
-          $in: ids.map(ObjectID.createFromHexString),
-        },
-      }).toArray()
+      const docs = await this.collection
+        .find<MongoDoc>({
+          _id: {
+            $in: ids.map(ObjectID.createFromHexString),
+          },
+        })
+        .toArray()
       console.debug('retrieve from mongodb', docs)
       return _.keyBy(docs, doc => doc._id.toHexString())
     } catch (err) {

@@ -48,7 +48,12 @@ export default class Processor {
     return stream
   }
 
-  transformer(action: 'upsert' | 'delete', doc: MongoDoc | ESDoc, timestamp?: Timestamp, isESDoc: boolean = false): IR | null {
+  transformer(
+    action: 'upsert' | 'delete',
+    doc: MongoDoc | ESDoc,
+    timestamp?: Timestamp,
+    isESDoc: boolean = false,
+  ): IR | null {
     if (action === 'delete') {
       return {
         action: 'delete',
@@ -57,15 +62,19 @@ export default class Processor {
         timestamp: timestamp ? timestamp.getHighBits() : 0,
       }
     }
-    const data = _.reduce(this.task.transform.mapping, (obj, value, key) => {
-      if (isESDoc) {
-        key = value
-      }
-      if (_.has(doc, key)) {
-        _.set(obj, value, _.get(doc, key))
-      }
-      return obj
-    }, {})
+    const data = _.reduce(
+      this.task.transform.mapping,
+      (obj, value, key) => {
+        if (isESDoc) {
+          key = value
+        }
+        if (_.has(doc, key)) {
+          _.set(obj, value, _.get(doc, key))
+        }
+        return obj
+      },
+      {},
+    )
     if (_.isEmpty(data)) {
       return null
     }
@@ -78,7 +87,11 @@ export default class Processor {
     }
   }
 
-  applyUpdateMongoDoc(doc: MongoDoc, set: { [key: string]: any } = {}, unset: { [key: string]: any } = {}): MongoDoc {
+  applyUpdateMongoDoc(
+    doc: MongoDoc,
+    set: { [key: string]: any } = {},
+    unset: { [key: string]: any } = {},
+  ): MongoDoc {
     _.forEach(this.task.transform.mapping, (ignored, key) => {
       if (_.get(unset, key)) {
         _.unset(doc, key)
@@ -90,7 +103,11 @@ export default class Processor {
     return doc
   }
 
-  applyUpdateESDoc(doc: ESDoc, set: { [key: string]: any } = {}, unset: { [key: string]: any } = {}): ESDoc {
+  applyUpdateESDoc(
+    doc: ESDoc,
+    set: { [key: string]: any } = {},
+    unset: { [key: string]: any } = {},
+  ): ESDoc {
     _.forEach(this.task.transform.mapping, (value, key) => {
       if (_.get(unset, key)) {
         _.unset(doc, value)
@@ -106,14 +123,15 @@ export default class Processor {
     let ignore = true
     if (oplog.op === 'u') {
       _.forEach(this.task.transform.mapping, (value, key) => {
-        ignore = ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.get(oplog.o.$unset, key))
+        ignore =
+          ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.get(oplog.o.$unset, key))
       })
     }
     return ignore
   }
 
   scan(): Observable<MongoDoc> {
-    return Observable.create<MongoDoc>((observer) => {
+    return Observable.create<MongoDoc>(observer => {
       try {
         const stream = Processor.controlReadCapacity(this.mongodb.getCollection())
         stream.addListener('data', (doc: MongoDoc) => {
@@ -132,14 +150,17 @@ export default class Processor {
   }
 
   tail(): Observable<OpLog> {
-    return Observable.create<OpLog>((observer) => {
+    return Observable.create<OpLog>(observer => {
       try {
         const cursor = this.mongodb.getOplog()
-        cursor.forEach((log: OpLog) => {
-          observer.onNext(log)
-        }, () => {
-          observer.onCompleted()
-        })
+        cursor.forEach(
+          (log: OpLog) => {
+            observer.onNext(log)
+          },
+          () => {
+            observer.onCompleted()
+          },
+        )
       } catch (err) {
         observer.onError(err)
       }
@@ -162,10 +183,14 @@ export default class Processor {
             return null
           }
           if (_.keys(oplog.o).find(key => !key.startsWith('$'))) {
-            return this.transformer('upsert', {
-              _id: oplog.o2._id,
-              ...oplog.o,
-            }, oplog.ts)
+            return this.transformer(
+              'upsert',
+              {
+                _id: oplog.o2._id,
+                ...oplog.o,
+              },
+              oplog.ts,
+            )
           }
           const old = this.task.transform.parent
             ? await this.elasticsearch.search(oplog.o2._id.toHexString())
@@ -201,7 +226,7 @@ export default class Processor {
       return
     }
     const body: any[] = []
-    irs.forEach((ir) => {
+    irs.forEach(ir => {
       switch (ir.action) {
         case 'upsert': {
           body.push({
@@ -217,7 +242,7 @@ export default class Processor {
         }
         case 'delete': {
           body.push({
-            'delete': {
+            delete: {
               _index: this.task.load.index,
               _type: this.task.load.type,
               _id: ir.id,
@@ -270,44 +295,61 @@ export default class Processor {
   async scanDocument(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.scan()
-        .bufferWithTimeOrCount(this.controls.elasticsearchBulkInterval, this.controls.elasticsearchBulkSize)
+        .bufferWithTimeOrCount(
+          this.controls.elasticsearchBulkInterval,
+          this.controls.elasticsearchBulkSize,
+        )
         .map(docs => _.compact<IR>(_.map(docs, doc => this.transformer('upsert', doc))))
-        .subscribe(async (irs) => {
-          if (irs.length === 0) {
-            return
-          }
-          try {
-            await this.load(irs)
-            await Task.saveCheckpoint(this.task.name(), new CheckPoint({
-              phase: 'scan',
-              id: irs[0].id,
-            }))
-            console.log('scan', this.task.name(), irs.length, irs[0].id)
-          } catch (err) {
-            console.warn('scan', this.task.name(), err.message)
-          }
-        }, reject, resolve)
+        .subscribe(
+          async irs => {
+            if (irs.length === 0) {
+              return
+            }
+            try {
+              await this.load(irs)
+              await Task.saveCheckpoint(
+                this.task.name(),
+                new CheckPoint({
+                  phase: 'scan',
+                  id: irs[0].id,
+                }),
+              )
+              console.log('scan', this.task.name(), irs.length, irs[0].id)
+            } catch (err) {
+              console.warn('scan', this.task.name(), err.message)
+            }
+          },
+          reject,
+          resolve,
+        )
     })
   }
 
   async tailOpLog(): Promise<never> {
     return new Promise<never>((resolve, reject) => {
       this.tail()
-        .bufferWithTimeOrCount(this.controls.elasticsearchBulkInterval, this.controls.elasticsearchBulkSize)
-        .subscribe((oplogs) => {
-          this.queue.push(oplogs)
-          if (!this.running) {
-            this.running = true
-            setImmediate(this._processOplog.bind(this))
-          }
-        }, (err) => {
-          console.error('tail', this.task.name(), err)
-          reject(err)
-        }, () => {
-          const err = new Error('should not complete')
-          console.error('tail', this.task.name(), err)
-          reject(err)
-        })
+        .bufferWithTimeOrCount(
+          this.controls.elasticsearchBulkInterval,
+          this.controls.elasticsearchBulkSize,
+        )
+        .subscribe(
+          oplogs => {
+            this.queue.push(oplogs)
+            if (!this.running) {
+              this.running = true
+              setImmediate(this._processOplog.bind(this))
+            }
+          },
+          err => {
+            console.error('tail', this.task.name(), err)
+            reject(err)
+          },
+          () => {
+            const err = new Error('should not complete')
+            console.error('tail', this.task.name(), err)
+            reject(err)
+          },
+        )
     })
   }
 
@@ -326,15 +368,22 @@ export default class Processor {
 
   async _processOplogSafe(oplogs) {
     try {
-      const irs = _.compact(await Promise.all(this.mergeOplogs(oplogs).map(async (oplog) => {
-        return await this.oplog(oplog)
-      })))
+      const irs = _.compact(
+        await Promise.all(
+          this.mergeOplogs(oplogs).map(async oplog => {
+            return await this.oplog(oplog)
+          }),
+        ),
+      )
       if (irs.length > 0) {
         await this.load(irs)
-        await Task.saveCheckpoint(this.task.name(), new CheckPoint({
-          phase: 'tail',
-          time: Date.now() - 1000 * 10,
-        }))
+        await Task.saveCheckpoint(
+          this.task.name(),
+          new CheckPoint({
+            phase: 'tail',
+            time: Date.now() - 1000 * 10,
+          }),
+        )
         console.log('tail', this.task.name(), irs.length, new Date(irs[0].timestamp * 1000))
       }
     } catch (err) {

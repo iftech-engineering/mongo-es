@@ -16,6 +16,6 @@ async function readConfig(path: string): Promise<Config> {
 
 readConfig(process.argv[2])
   .then(run)
-  .catch((err) => {
+  .catch(err => {
     console.error('run', err)
   })

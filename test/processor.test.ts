@@ -6,20 +6,20 @@ import { Controls, Task } from '../src/config'
 import Processor from '../src/processor'
 
 const oplog: OpLog = {
-  'ts': new Timestamp(14, 1495012567),
-  'op': 'u',
-  'ns': 'db0.collection0',
-  'o2': {
-    '_id': new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa')
+  ts: new Timestamp(14, 1495012567),
+  op: 'u',
+  ns: 'db0.collection0',
+  o2: {
+    _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
   },
-  'o': {
-    '$set': {
-      'field0.field1': 'set nested field'
+  o: {
+    $set: {
+      'field0.field1': 'set nested field',
     },
-    '$unset': {
-      'field0.field2': 1
-    }
-  }
+    $unset: {
+      'field0.field2': 1,
+    },
+  },
 }
 
 const task: Task = new Task({
@@ -30,8 +30,8 @@ const task: Task = new Task({
   transform: {
     mapping: {
       'field0.field1': 'field1',
-      'field0.field2': 'field2'
-    }
+      'field0.field2': 'field2',
+    },
   },
   load: {},
 })
@@ -43,8 +43,8 @@ const task2: Task = new Task({
   extract: {},
   transform: {
     mapping: {
-      'field0.field3': 'field3'
-    }
+      'field0.field3': 'field3',
+    },
   },
   load: {},
 })
@@ -130,218 +130,267 @@ test('ignoreUpdate false', t => {
 })
 
 test('mergeOplogs insert then update', t => {
-  const processor = new Processor({
-    transform: {
-      mapping: {
-        'field0.field1': 'field1',
-        'field0.field2': 'field2',
+  const processor = new Processor(
+    {
+      transform: {
+        mapping: {
+          'field0.field1': 'field1',
+          'field0.field2': 'field2',
+        },
+      },
+    } as any,
+    new Controls({}),
+    null as any,
+    null as any,
+  )
+  const oplogs = processor.mergeOplogs([
+    {
+      ts: new Timestamp(0, 0),
+      op: 'i',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+        'field0.field1': 0,
       },
     },
-  } as any, new Controls({}), null as any, null as any)
-  const oplogs = processor.mergeOplogs([{
-    ts: new Timestamp(0, 0),
-    op: 'i',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-      'field0.field1': 0,
+    {
+      ts: new Timestamp(0, 1),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        $set: {
+          'field0.field1': 1,
+        },
+        $unset: {
+          'field0.field2': 1,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+      },
     },
-  }, {
-    ts: new Timestamp(0, 1),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      $set: {
+  ])
+  t.deepEqual(oplogs, [
+    {
+      ts: new Timestamp(0, 1),
+      op: 'i',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
         'field0.field1': 1,
       },
-      $unset: {
-        'field0.field2': 1,
-      },
     },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
-  t.deepEqual(oplogs, [{
-    ts: new Timestamp(0, 1),
-    op: 'i',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-      'field0.field1': 1,
-    },
-  }])
+  ])
 })
 
 test('mergeOplogs update then update', t => {
-  const processor = new Processor({
-    transform: {
-      mapping: {
-        'field0.field1': 'field1',
-        'field0.field2': 'field2',
+  const processor = new Processor(
+    {
+      transform: {
+        mapping: {
+          'field0.field1': 'field1',
+          'field0.field2': 'field2',
+        },
+      },
+    } as any,
+    new Controls({}),
+    null as any,
+    null as any,
+  )
+  const oplogs = processor.mergeOplogs([
+    {
+      ts: new Timestamp(0, 1),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        'field0.field1': 1,
+        $set: {
+          'field0.field2': 1,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
       },
     },
-  } as any, new Controls({}), null as any, null as any)
-  const oplogs = processor.mergeOplogs([{
-    ts: new Timestamp(0, 1),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      'field0.field1': 1,
-      $set: {
-        'field0.field2': 1,
+    {
+      ts: new Timestamp(0, 0),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        $set: {
+          'field0.field1': 3,
+          'field0.field2': 2,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
       },
     },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }, {
-    ts: new Timestamp(0, 0),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      $set: {
-        'field0.field1': 3,
-        'field0.field2': 2,
+  ])
+  t.deepEqual(oplogs, [
+    {
+      ts: new Timestamp(0, 1),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        'field0.field1': 1,
+        $set: {
+          'field0.field1': 3,
+          'field0.field2': 1,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
       },
     },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
-  t.deepEqual(oplogs, [{
-    ts: new Timestamp(0, 1),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      'field0.field1': 1,
-      $set: {
-        'field0.field1': 3,
-        'field0.field2': 1,
-      },
-    },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
+  ])
 })
 
 test('mergeOplogs update then delete', t => {
-  const processor = new Processor({
-    transform: {
-      mapping: {
-        'field0.field1': 'field1',
-        'field0.field2': 'field2',
+  const processor = new Processor(
+    {
+      transform: {
+        mapping: {
+          'field0.field1': 'field1',
+          'field0.field2': 'field2',
+        },
+      },
+    } as any,
+    new Controls({}),
+    null as any,
+    null as any,
+  )
+  const oplogs = processor.mergeOplogs([
+    {
+      ts: new Timestamp(0, 0),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        'field0.field1': 1,
+        $set: {
+          'field0.field2': 1,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
       },
     },
-  } as any, new Controls({}), null as any, null as any)
-  const oplogs = processor.mergeOplogs([{
-    ts: new Timestamp(0, 0),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      'field0.field1': 1,
-      $set: {
-        'field0.field2': 1,
+    {
+      ts: new Timestamp(0, 1),
+      op: 'd',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
       },
     },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+  ])
+  t.deepEqual(oplogs, [
+    {
+      ts: new Timestamp(0, 1),
+      op: 'd',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+      },
     },
-  }, {
-    ts: new Timestamp(0, 1),
-    op: 'd',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
-  t.deepEqual(oplogs, [{
-    ts: new Timestamp(0, 1),
-    op: 'd',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
+  ])
 })
 
 test('mergeOplogs insert then delete', t => {
-  const processor = new Processor({
-    transform: {
-      mapping: {
-        'field0.field1': 'field1',
-        'field0.field2': 'field2',
+  const processor = new Processor(
+    {
+      transform: {
+        mapping: {
+          'field0.field1': 'field1',
+          'field0.field2': 'field2',
+        },
+      },
+    } as any,
+    new Controls({}),
+    null as any,
+    null as any,
+  )
+  const oplogs = processor.mergeOplogs([
+    {
+      ts: new Timestamp(0, 0),
+      op: 'i',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+        field0: 1,
       },
     },
-  } as any, new Controls({}), null as any, null as any)
-  const oplogs = processor.mergeOplogs([{
-    ts: new Timestamp(0, 0),
-    op: 'i',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-      field0: 1,
+    {
+      ts: new Timestamp(0, 1),
+      op: 'd',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+      },
     },
-  }, {
-    ts: new Timestamp(0, 1),
-    op: 'd',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
+  ])
   t.deepEqual(oplogs, [])
 })
 
 test('mergeOplogs insert then update then update', t => {
-  const processor = new Processor({
-    transform: {
-      mapping: {
-        'field0.field1': 'field1',
+  const processor = new Processor(
+    {
+      transform: {
+        mapping: {
+          'field0.field1': 'field1',
+        },
+      },
+    } as any,
+    new Controls({}),
+    null as any,
+    null as any,
+  )
+  const oplogs = processor.mergeOplogs([
+    {
+      ts: new Timestamp(0, 0),
+      op: 'i',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+        'field0.field1': 0,
       },
     },
-  } as any, new Controls({}), null as any, null as any)
-  const oplogs = processor.mergeOplogs([{
-    ts: new Timestamp(0, 0),
-    op: 'i',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-      'field0.field1': 0,
+    {
+      ts: new Timestamp(0, 2),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        $set: {
+          'field0.field1': 2,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+      },
     },
-  }, {
-    ts: new Timestamp(0, 2),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      $set: {
+    {
+      ts: new Timestamp(0, 1),
+      op: 'u',
+      ns: 'example1',
+      o: {
+        $set: {
+          'field0.field1': 1,
+        },
+      },
+      o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+      },
+    },
+  ])
+  t.deepEqual(oplogs, [
+    {
+      ts: new Timestamp(0, 2),
+      op: 'i',
+      ns: 'example1',
+      o: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
         'field0.field1': 2,
       },
     },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }, {
-    ts: new Timestamp(0, 1),
-    op: 'u',
-    ns: 'example1',
-    o: {
-      $set: {
-        'field0.field1': 1
-      },
-    },
-    o2: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-    },
-  }])
-  t.deepEqual(oplogs, [{
-    ts: new Timestamp(0, 2),
-    op: 'i',
-    ns: 'example1',
-    o: {
-      _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
-      'field0.field1': 2,
-    },
-  }])
+  ])
 })

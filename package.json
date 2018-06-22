@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.2.7",
+  "version": "3.2.8",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -19,6 +19,7 @@
     "test": "npm run compile && ava dist/test",
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
+    "prettier": "prettier --config .prettierrc --write '{src,test}/**/*.ts'",
     "prepublishOnly": "npm run build"
   },
   "publishConfig": {
@@ -38,19 +39,20 @@
   },
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
-    "elasticsearch": "14.2.1",
-    "lodash": "4.17.5",
-    "mongodb": "2.2.33",
+    "elasticsearch": "15.0.0",
+    "lodash": "4.17.10",
+    "mongodb": "3.0.10",
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.22",
-    "@types/lodash": "4.14.105",
-    "@types/mongodb": "3.0.0",
+    "@types/elasticsearch": "5.0.24",
+    "@types/lodash": "4.14.110",
+    "@types/mongodb": "3.0.21",
     "@types/rx": "4.1.1",
     "ava": "0.25.0",
-    "nodemon": "1.17.2",
-    "source-map-support": "0.5.4",
-    "typescript": "2.7.2"
+    "nodemon": "1.17.5",
+    "prettier": "1.13.5",
+    "source-map-support": "0.5.6",
+    "typescript": "2.9.2"
   }
 }

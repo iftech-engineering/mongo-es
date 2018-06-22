@@ -117,7 +117,12 @@ export class Controls {
   elasticsearchBulkSize: number
   indexNameSuffix: string
 
-  constructor({ mongodbReadCapacity = Infinity, elasticsearchBulkInterval = 5000, elasticsearchBulkSize = 5000, indexNameSuffix = '' }) {
+  constructor({
+    mongodbReadCapacity = Infinity,
+    elasticsearchBulkInterval = 5000,
+    elasticsearchBulkSize = 5000,
+    indexNameSuffix = '',
+  }) {
     this.mongodbReadCapacity = mongodbReadCapacity
     this.elasticsearchBulkInterval = elasticsearchBulkInterval
     this.elasticsearchBulkSize = elasticsearchBulkSize

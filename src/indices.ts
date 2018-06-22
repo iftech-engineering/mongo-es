@@ -1,4 +1,9 @@
-import { Client, IndicesCreateParams, IndicesPutMappingParams, IndicesExistsParams } from 'elasticsearch'
+import {
+  Client,
+  IndicesCreateParams,
+  IndicesPutMappingParams,
+  IndicesExistsParams,
+} from 'elasticsearch'
 
 import { Config, ElasticsearchConfig, Task } from './config'
 
@@ -15,7 +20,7 @@ export default class Indices {
     const indices = new Indices(config.elasticsearch)
     for (let index of config.elasticsearch.indices) {
       index.index += config.controls.indexNameSuffix
-      if (!await indices.exists(index)) {
+      if (!(await indices.exists(index))) {
         await indices.create(index)
         console.log('create index', index.index)
       }
