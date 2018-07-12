@@ -182,16 +182,6 @@ export default class Processor {
             console.debug('ignoreUpdate', oplog)
             return null
           }
-          if (_.keys(oplog.o).find(key => !key.startsWith('$'))) {
-            return this.transformer(
-              'upsert',
-              {
-                _id: oplog.o2._id,
-                ...oplog.o,
-              },
-              oplog.ts,
-            )
-          }
           const old = this.task.transform.parent
             ? await this.elasticsearch.search(oplog.o2._id.toHexString())
             : await this.elasticsearch.retrieve(oplog.o2._id.toHexString())
