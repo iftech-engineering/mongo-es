@@ -185,10 +185,9 @@ export default class Processor {
           const old = this.task.transform.parent
             ? await this.elasticsearch.search(oplog.o2._id.toHexString())
             : await this.elasticsearch.retrieve(oplog.o2._id.toHexString())
-          const doc =
-            old && _.size(old)
-              ? this.applyUpdateESDoc(old, oplog.o.$set, oplog.o.$unset)
-              : await this.mongodb.retrieve(oplog.o2._id)
+          const doc = old
+            ? this.applyUpdateESDoc(old, oplog.o.$set, oplog.o.$unset)
+            : await this.mongodb.retrieve(oplog.o2._id)
           return doc ? this.transformer('upsert', doc, oplog.ts, !!old) : null
         }
         case 'd': {

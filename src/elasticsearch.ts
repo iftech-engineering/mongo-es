@@ -134,7 +134,9 @@ export default class Elasticsearch {
               return
             }
             console.debug('retrieve from elasticsearch', response)
-            const docs: ESDoc[] = response.docs.map(this._mapResponse.bind(this))
+            const docs: ESDoc[] = response.docs
+              .filter(doc => doc.found)
+              .map(this._mapResponse.bind(this))
             resolve(_.keyBy(docs, doc => doc._id))
           } catch (err2) {
             console.error('retrieve from elasticsearch', this.task.name(), ids, err2)
