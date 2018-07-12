@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.2.10",
+  "version": "3.2.11",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -21,9 +21,6 @@
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "prettier": "prettier --config .prettierrc --write '{src,test}/**/*.ts'",
     "prepublishOnly": "npm run build"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.com"
   },
   "bin": {
     "mongo-es": "dist/src/main.js"
