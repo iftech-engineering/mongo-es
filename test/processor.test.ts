@@ -22,6 +22,18 @@ const oplog: OpLog = {
   },
 }
 
+const oplog2: OpLog = {
+    ts: new Timestamp(14, 1495012567),
+    op: 'u',
+    ns: 'db0.collection0',
+    o2: {
+        _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
+    },
+    o: {
+        'field0.field2': 1,
+    }
+}
+
 const task: Task = new Task({
   from: {
     phase: 'scan',
@@ -113,10 +125,18 @@ test('applyUpdateMongoDoc', t => {
 
 test('applyUpdateESDoc', t => {
   const transform = new Processor(task, new Controls({}), null as any, null as any)
-  t.deepEqual(transform.applyUpdateESDoc(esDoc, oplog.o.$set, oplog.o.$unset), {
+  t.deepEqual(transform.applyUpdateESDoc(esDoc, oplog), {
     _id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
     field1: 'set nested field',
   })
+})
+
+test('applyUpdateESDocAll', t => {
+    const transform = new Processor(task, new Controls({}), null as any, null as any)
+    t.deepEqual(transform.applyUpdateESDoc(esDoc, oplog2), {
+        _id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+        field2: 1,
+    })
 })
 
 test('ignoreUpdate true', t => {

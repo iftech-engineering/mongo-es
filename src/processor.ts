@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import { Timestamp } from 'mongodb'
 
 import { Task, Controls, CheckPoint } from './config'
-import { IR, MongoDoc, ESDoc, OpLog } from './types'
+import {IR, MongoDoc, ESDoc, OpLog, OplogUpdate} from './types'
 import Elasticsearch from './elasticsearch'
 import MongoDB from './mongodb'
 
@@ -105,17 +105,38 @@ export default class Processor {
 
   applyUpdateESDoc(
     doc: ESDoc,
-    set: { [key: string]: any } = {},
-    unset: { [key: string]: any } = {},
+    oplog: OplogUpdate
   ): ESDoc {
-    _.forEach(this.task.transform.mapping, (value, key) => {
-      if (_.get(unset, key)) {
-        _.unset(doc, value)
-      }
-      if (_.has(set, key)) {
-        _.set(doc, value, _.get(set, key))
-      }
-    })
+    let partUpdate: boolean = false
+
+    if(_.has(oplog.o, '$unset')){
+        _.forEach(this.task.transform.mapping, (value, key) => {
+            if (_.get(oplog.o.$unset, key)) {
+                _.unset(doc, value)
+            }
+        })
+        partUpdate = true
+    }
+
+    if(_.has(oplog.o, '$set')){
+        _.forEach(this.task.transform.mapping, (value, key) => {
+            if (_.has(oplog.o.$set, key)) {
+                _.set(doc, value, _.get(oplog.o.$set, key))
+            }
+        })
+        partUpdate = true
+    }
+
+    if (!partUpdate){
+      _.forEach(this.task.transform.mapping, (value, key) => {
+          if (_.has(oplog.o, key)) {
+              _.set(doc, value, _.get(oplog.o, key))
+          }else{
+              _.unset(doc, value)
+          }
+      })
+    }
+
     return doc
   }
 
@@ -186,7 +207,7 @@ export default class Processor {
             ? await this.elasticsearch.search(oplog.o2._id.toHexString())
             : await this.elasticsearch.retrieve(oplog.o2._id.toHexString())
           const doc = old
-            ? this.applyUpdateESDoc(old, oplog.o.$set, oplog.o.$unset)
+            ? this.applyUpdateESDoc(old, oplog)
             : await this.mongodb.retrieve(oplog.o2._id)
           return doc ? this.transformer('upsert', doc, oplog.ts, !!old) : null
         }
