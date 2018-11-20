@@ -10,7 +10,7 @@ Task.onSaveCheckpoint((name, checkpoint) => {
   return redis.set(`mongo-es:${name}`, JSON.stringify(checkpoint))
 })
 
-Task.onLoadCheckpoint((name) => {
+Task.onLoadCheckpoint(name => {
   return redis.get(`mongo-es:${name}`).then(str => {
     console.log('loaded', `mongo-es:${name}`, str)
     return JSON.parse(str)

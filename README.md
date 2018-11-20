@@ -36,7 +36,7 @@ Task.onSaveCheckpoint((name, checkpoint) => {
 })
 
 // this will overwrite task.from in config file
-Task.onLoadCheckpoint((name) => {
+Task.onLoadCheckpoint(name => {
   return redis.get(`mongo-es:${name}`).then(JSON.parse)
 })
 
@@ -56,10 +56,11 @@ tail the oplog for documents' create, update or delete
 ## Configuration
 
 Structure:
+
 ```json
 {
   "controls": {},
-  "mongodb": {},  
+  "mongodb": {},
   "elasticsearch": {},
   "tasks": [
     {
@@ -83,7 +84,7 @@ Structure:
 ### mongodb
 
 - `url` - The connection URI string, eg: `mongodb://user:password@localhost:27017/db?replicaSet=rs0`.
-**notice**: must use a `admin` user to access oplog.
+  **notice**: must use a `admin` user to access oplog.
 - `options` - Connection settings, see: [MongoClient](http://mongodb.github.io/node-mongodb-native/2.1/api/MongoClient.html#.connect). (optional)
 
 ### elasticsearch

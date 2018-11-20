@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -19,7 +19,7 @@
     "test": "npm run compile && ava dist/test",
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
-    "prettier": "prettier --config .prettierrc --write '{src,test}/**/*.ts'",
+    "prettier": "prettier --config .prettierrc --write '**/*'",
     "prepublishOnly": "npm run build"
   },
   "bin": {
@@ -36,20 +36,27 @@
   },
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
-    "elasticsearch": "15.1.1",
-    "lodash": "4.17.10",
-    "mongodb": "3.1.1",
+    "elasticsearch": "15.2.0",
+    "lodash": "4.17.11",
+    "mongodb": "3.1.10",
     "rx": "4.1.0"
   },
   "devDependencies": {
-    "@types/elasticsearch": "5.0.25",
-    "@types/lodash": "4.14.112",
-    "@types/mongodb": "3.1.2",
+    "@types/elasticsearch": "5.0.28",
+    "@types/lodash": "4.14.118",
+    "@types/mongodb": "3.1.14",
     "@types/rx": "4.1.1",
     "ava": "0.25.0",
-    "nodemon": "1.18.3",
-    "prettier": "1.13.7",
-    "source-map-support": "0.5.6",
-    "typescript": "2.9.2"
+    "husky": "1.1.4",
+    "nodemon": "1.18.6",
+    "prettier": "1.15.2",
+    "pretty-quick": "1.8.0",
+    "source-map-support": "0.5.9",
+    "typescript": "3.1.6"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }
