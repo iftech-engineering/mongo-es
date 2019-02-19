@@ -27,12 +27,8 @@ export default class Indices {
     }
     for (let task of config.tasks) {
       task.load.index += config.controls.indexNameSuffix
-      try {
-        await indices.putMapping(task.load)
-        console.log('put mapping', task.load.index, task.load.type)
-      } catch (err) {
-        console.error('put mapping', task.load.index, task.load.type, err)
-      }
+      await indices.putMapping(task.load)
+      console.log('put mapping', task.load.index, task.load.type)
     }
   }
 
