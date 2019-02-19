@@ -48,6 +48,9 @@ export type TransformTask = {
   mapping: {
     [key: string]: string
   }
+  static?: {
+    [key: string]: string
+  }
 }
 
 export type LoadTask = IndicesPutMappingParams

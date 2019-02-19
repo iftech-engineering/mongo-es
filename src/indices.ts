@@ -5,7 +5,7 @@ import {
   IndicesExistsParams,
 } from 'elasticsearch'
 
-import { Config, ElasticsearchConfig, Task } from './config'
+import { Config, ElasticsearchConfig } from './config'
 
 export default class Indices {
   static client: Client

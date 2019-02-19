@@ -1,6 +1,6 @@
 import { Readable } from 'stream'
 
-import { Observable, Subject } from 'rx'
+import { Observable } from 'rx'
 import * as _ from 'lodash'
 import { Timestamp } from 'mongodb'
 
@@ -62,6 +62,7 @@ export default class Processor {
         timestamp: timestamp ? timestamp.getHighBits() : 0,
       }
     }
+
     const data = _.reduce(
       this.task.transform.mapping,
       (obj, value, key) => {
@@ -73,7 +74,7 @@ export default class Processor {
         }
         return obj
       },
-      {},
+      this.task.transform.static || {},
     )
     if (_.isEmpty(data)) {
       return null
