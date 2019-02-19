@@ -19,17 +19,11 @@ export default class MongoDB {
   }
 
   static async init(mongodb: MongoConfig, task: Task): Promise<MongoDB> {
-    const collection = (await MongoClient.connect(
-      mongodb.url,
-      mongodb.options,
-    ))
+    const collection = (await MongoClient.connect(mongodb.url, mongodb.options))
       .db(task.extract.db)
       .collection(task.extract.collection)
     if (!MongoDB.oplog) {
-      MongoDB.oplog = (await MongoClient.connect(
-        mongodb.url,
-        mongodb.options,
-      ))
+      MongoDB.oplog = (await MongoClient.connect(mongodb.url, mongodb.options))
         .db('local')
         .collection('oplog.rs')
     }
