@@ -74,7 +74,7 @@ export default class Processor {
         }
         return obj
       },
-      this.task.transform.static || {},
+      { ...this.task.transform.static } || {},
     )
     if (_.isEmpty(data)) {
       return null
