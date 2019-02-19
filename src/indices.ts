@@ -5,7 +5,7 @@ import {
   IndicesExistsParams,
 } from 'elasticsearch'
 
-import { Config, ElasticsearchConfig, Task } from './config'
+import { Config, ElasticsearchConfig } from './config'
 
 export default class Indices {
   static client: Client
@@ -27,8 +27,12 @@ export default class Indices {
     }
     for (let task of config.tasks) {
       task.load.index += config.controls.indexNameSuffix
-      await indices.putMapping(task.load)
-      console.log('put mapping', task.load.index, task.load.type)
+      try {
+        await indices.putMapping(task.load)
+        console.log('put mapping', task.load.index, task.load.type)
+      } catch (err) {
+        console.error('put mapping', task.load.index, task.load.type, err)
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { Readable } from 'stream'
 
-import { Observable, Subject } from 'rx'
+import { Observable } from 'rx'
 import * as _ from 'lodash'
 import { Timestamp } from 'mongodb'
 
