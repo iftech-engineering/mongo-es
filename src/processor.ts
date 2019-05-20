@@ -175,7 +175,7 @@ export default class Processor {
           return this.transformer('upsert', oplog.o, oplog.ts)
         }
         case 'u': {
-          if (_.size(oplog.o2) !== 1 || !oplog.o2._id) {
+          if (!oplog.o2._id) {
             console.warn('oplog', 'cannot transform', oplog)
             return null
           }
