@@ -119,19 +119,13 @@ export default class Processor {
     })
     return doc
   }
-  
-  hasKeyStartsWith(o, key_name): boolean {
-    return _.keys(o).find((key) => {
-      return key.split('.', 1)[0] === key_name;
-    }) ? true : false;
-  }
-  
+
   ignoreUpdate(oplog: OpLog): boolean {
     let ignore = true
     if (oplog.op === 'u') {
       _.forEach(this.task.transform.mapping, (value, key) => {
         ignore =
-          ignore && !(this.hasKeyStartsWith(oplog.o, key) || this.hasKeyStartsWith(oplog.o.$set, key) || this.hasKeyStartsWith(oplog.o.$unset, key))
+          ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.get(oplog.o.$unset, key))
       })
     }
     return ignore
