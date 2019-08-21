@@ -13,6 +13,7 @@ const task: Task = new Task({
   from: {
     phase: 'scan',
   },
+  // @ts-ignore
   extract: {},
   transform: {
     mapping: {
@@ -20,6 +21,7 @@ const task: Task = new Task({
       'field0.field2': 'field2',
     },
   },
+  // @ts-ignore
   load: {
     index: 'test',
     type: 'test',

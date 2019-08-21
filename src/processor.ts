@@ -63,19 +63,23 @@ export default class Processor {
       }
     }
 
-    const data = _.reduce(
-      this.task.transform.mapping,
-      (obj, value, key) => {
-        if (isESDoc) {
-          key = value
-        }
-        if (_.has(doc, key)) {
-          _.set(obj, value, _.get(doc, key))
-        }
-        return obj
-      },
-      { ...this.task.transform.static } || {},
-    )
+    const data =
+      typeof this.task.transform.mapping === 'function'
+        ? { ...this.task.transform.mapping(doc), ...this.task.transform.static }
+        : _.reduce(
+            this.task.transform.mapping,
+            (obj, value, key) => {
+              if (isESDoc) {
+                key = value
+              }
+              if (_.has(doc, key)) {
+                _.set(obj, value, _.get(doc, key))
+              }
+              return obj
+            },
+            { ...this.task.transform.static } || {},
+          )
+
     if (_.isEmpty(data)) {
       return null
     }

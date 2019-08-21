@@ -1,24 +1,40 @@
 import { ObjectID, MongoClientOptions } from 'mongodb'
 import { ConfigOptions, IndicesCreateParams, IndicesPutMappingParams } from 'elasticsearch'
+import { MongoDoc, ESDoc } from './types'
 
+export type MongoConfigOptions = {
+  url: string
+  options?: MongoClientOptions
+}
 export class MongoConfig {
   url: string
   options?: MongoClientOptions
 
-  constructor({ url, options = {} }) {
+  constructor({ url, options = {} }: MongoConfigOptions) {
     this.url = url
     this.options = options
   }
+}
+
+export type ElasticsearchConfigOptions = {
+  options: ConfigOptions
+  indices: IndicesCreateParams[]
 }
 
 export class ElasticsearchConfig {
   options: ConfigOptions
   indices: IndicesCreateParams[]
 
-  constructor({ options, indices = [] }) {
+  constructor({ options, indices = [] }: ElasticsearchConfigOptions) {
     this.options = options
     this.indices = indices
   }
+}
+
+export type CheckPointOptions = {
+  phase: 'scan' | 'tail'
+  id?: string
+  time?: string | number | Date
 }
 
 export class CheckPoint {
@@ -26,7 +42,7 @@ export class CheckPoint {
   id: ObjectID
   time: Date
 
-  constructor({ phase, id = '000000000000000000000000', time = Date.now() }) {
+  constructor({ phase, id = '000000000000000000000000', time = Date.now() }: CheckPointOptions) {
     this.phase = phase
     if (phase === 'scan') {
       this.id = new ObjectID(id)
@@ -45,15 +61,20 @@ export type ExtractTask = {
 
 export type TransformTask = {
   parent?: string
-  mapping: {
-    [key: string]: string
-  }
+  mapping: ((doc: MongoDoc | ESDoc) => any) | { [key: string]: string }
   static?: {
     [key: string]: string
   }
 }
 
 export type LoadTask = IndicesPutMappingParams
+
+export type TaskOptions = {
+  from: CheckPointOptions
+  extract: ExtractTask
+  transform: TransformTask
+  load: LoadTask
+}
 
 export class Task {
   from: CheckPoint
@@ -63,7 +84,7 @@ export class Task {
   static onSaveCallback: (name: string, checkPoint: CheckPoint) => Promise<void>
   static onLoadCallback: (name: string) => Promise<any | null>
 
-  constructor({ from, extract, transform, load }) {
+  constructor({ from, extract, transform, load }: TaskOptions) {
     this.from = new CheckPoint(from)
     this.extract = extract
     this.transform = transform
@@ -114,6 +135,13 @@ export class Task {
   }
 }
 
+export type ControlsOptions = {
+  mongodbReadCapacity?: number
+  elasticsearchBulkInterval?: number
+  elasticsearchBulkSize?: number
+  indexNameSuffix?: string
+}
+
 export class Controls {
   mongodbReadCapacity: number
   elasticsearchBulkInterval: number
@@ -125,12 +153,19 @@ export class Controls {
     elasticsearchBulkInterval = 5000,
     elasticsearchBulkSize = 5000,
     indexNameSuffix = '',
-  }) {
+  }: ControlsOptions) {
     this.mongodbReadCapacity = mongodbReadCapacity
     this.elasticsearchBulkInterval = elasticsearchBulkInterval
     this.elasticsearchBulkSize = elasticsearchBulkSize
     this.indexNameSuffix = indexNameSuffix
   }
+}
+
+export type MongoEsConfig = {
+  mongodb: MongoConfigOptions
+  elasticsearch: ElasticsearchConfigOptions
+  controls: ControlsOptions
+  tasks: TaskOptions[]
 }
 
 export class Config {
@@ -139,8 +174,10 @@ export class Config {
   tasks: Task[]
   controls: Controls
 
-  constructor(str: string) {
-    const { mongodb, elasticsearch, tasks, controls } = JSON.parse(str)
+  constructor(config: string | MongoEsConfig) {
+    const { mongodb, elasticsearch, tasks, controls } =
+      typeof config === 'string' ? (JSON.parse(config) as MongoEsConfig) : config
+
     this.mongodb = new MongoConfig(mongodb)
     this.elasticsearch = new ElasticsearchConfig(elasticsearch)
     this.tasks = tasks.map(task => new Task(task))

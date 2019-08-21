@@ -26,6 +26,7 @@ const task: Task = new Task({
   from: {
     phase: 'scan',
   },
+  // @ts-ignore
   extract: {},
   transform: {
     mapping: {
@@ -33,6 +34,7 @@ const task: Task = new Task({
       'field0.field2': 'field2',
     },
   },
+  // @ts-ignore
   load: {},
 })
 
@@ -40,12 +42,27 @@ const task2: Task = new Task({
   from: {
     phase: 'scan',
   },
+  // @ts-ignore
   extract: {},
   transform: {
     mapping: {
       'field0.field3': 'field3',
     },
   },
+  // @ts-ignore
+  load: {},
+})
+
+const task3 = new Task({
+  from: {
+    phase: 'scan',
+  },
+  // @ts-ignore
+  extract: {},
+  transform: {
+    mapping: doc => ({ field1: doc.field0.field1, field2: doc.field0.field2 }),
+  },
+  // @ts-ignore
   load: {},
 })
 
@@ -96,6 +113,34 @@ test('transformer delete', t => {
   t.deepEqual(processor.transformer('delete', mongoDoc), <IR>{
     action: 'delete',
     id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    parent: undefined,
+    timestamp: 0,
+  })
+})
+
+test('transformer create by mapping function', t => {
+  const processor = new Processor(task3, new Controls({}), null as any, null as any)
+  t.deepEqual(processor.transformer('upsert', mongoDoc), <IR>{
+    action: 'upsert',
+    id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    data: {
+      field1: 1,
+      field2: 2,
+    },
+    parent: undefined,
+    timestamp: 0,
+  })
+})
+
+test('transformer update by mapping function', t => {
+  const processor = new Processor(task3, new Controls({}), null as any, null as any)
+  t.deepEqual(processor.transformer('upsert', mongoDoc), <IR>{
+    action: 'upsert',
+    id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    data: {
+      field1: 1,
+      field2: 2,
+    },
     parent: undefined,
     timestamp: 0,
   })
