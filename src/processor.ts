@@ -126,7 +126,7 @@ export default class Processor {
 
   ignoreUpdate(oplog: OpLog): boolean {
     let ignore = true
-    if (oplog.op === 'u') {
+    if (oplog.op === 'u' && typeof this.task.transform.mapping !== 'function') {
       _.forEach(this.task.transform.mapping, (value, key) => {
         ignore =
           ignore && !(_.has(oplog.o, key) || _.has(oplog.o.$set, key) || _.get(oplog.o.$unset, key))
