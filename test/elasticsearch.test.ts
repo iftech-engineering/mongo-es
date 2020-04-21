@@ -26,7 +26,7 @@ const task: Task = new Task({
   },
 })
 
-test('load', async t => {
+test('load', async (t) => {
   const elasticsearch = new Elasticsearch(
     {
       options: {
@@ -67,13 +67,13 @@ test('load', async t => {
   })
 })
 
-test.before('create index', t => {
+test.before('create index', (t) => {
   return client.indices.create({
     index: 'test',
   })
 })
 
-test.after.always('delete index', t => {
+test.after.always('delete index', (t) => {
   return client.indices.delete({
     index: 'test',
   })

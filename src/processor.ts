@@ -132,7 +132,7 @@ export default class Processor {
   }
 
   scan(): Observable<MongoDoc> {
-    return Observable.create<MongoDoc>(observer => {
+    return Observable.create<MongoDoc>((observer) => {
       try {
         const stream = Processor.controlReadCapacity(this.mongodb.getCollection())
         stream.addListener('data', (doc: MongoDoc) => {
@@ -151,7 +151,7 @@ export default class Processor {
   }
 
   tail(): Observable<OpLog> {
-    return Observable.create<OpLog>(observer => {
+    return Observable.create<OpLog>((observer) => {
       try {
         const cursor = this.mongodb.getOplog()
         cursor.forEach(
@@ -183,7 +183,7 @@ export default class Processor {
             console.debug('ignoreUpdate', oplog)
             return null
           }
-          if (_.keys(oplog.o).find(key => !key.startsWith('$'))) {
+          if (_.keys(oplog.o).find((key) => !key.startsWith('$'))) {
             return this.transformer(
               'upsert',
               {
@@ -227,7 +227,7 @@ export default class Processor {
       return
     }
     const body: any[] = []
-    irs.forEach(ir => {
+    irs.forEach((ir) => {
       switch (ir.action) {
         case 'upsert': {
           body.push({
@@ -290,7 +290,10 @@ export default class Processor {
         }
       }
     }
-    return _.sortBy(_.map(store, oplog => oplog), 'ts')
+    return _.sortBy(
+      _.map(store, (oplog) => oplog),
+      'ts',
+    )
   }
 
   async scanDocument(): Promise<void> {
@@ -300,9 +303,9 @@ export default class Processor {
           this.controls.elasticsearchBulkInterval,
           this.controls.elasticsearchBulkSize,
         )
-        .map(docs => _.compact<IR>(_.map(docs, doc => this.transformer('upsert', doc))))
+        .map((docs) => _.compact<IR>(_.map(docs, (doc) => this.transformer('upsert', doc))))
         .subscribe(
-          async irs => {
+          async (irs) => {
             if (irs.length === 0) {
               return
             }
@@ -334,14 +337,14 @@ export default class Processor {
           this.controls.elasticsearchBulkSize,
         )
         .subscribe(
-          oplogs => {
+          (oplogs) => {
             this.queue.push(oplogs)
             if (!this.running) {
               this.running = true
               setImmediate(this._processOplog.bind(this))
             }
           },
-          err => {
+          (err) => {
             console.error('tail', this.task.name(), err)
             reject(err)
           },
@@ -371,7 +374,7 @@ export default class Processor {
     try {
       const irs = _.compact(
         await Promise.all(
-          this.mergeOplogs(oplogs).map(async oplog => {
+          this.mergeOplogs(oplogs).map(async (oplog) => {
             return await this.oplog(oplog)
           }),
         ),

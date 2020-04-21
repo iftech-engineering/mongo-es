@@ -143,7 +143,7 @@ export class Config {
     const { mongodb, elasticsearch, tasks, controls } = JSON.parse(str)
     this.mongodb = new MongoConfig(mongodb)
     this.elasticsearch = new ElasticsearchConfig(elasticsearch)
-    this.tasks = tasks.map(task => new Task(task))
+    this.tasks = tasks.map((task) => new Task(task))
     this.controls = new Controls(controls)
   }
 }

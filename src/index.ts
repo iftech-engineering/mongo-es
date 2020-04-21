@@ -31,7 +31,7 @@ export async function run(config: Config): Promise<void> {
       console.log('scan', task.name(), 'end')
     }
     console.log('tail', task.name(), 'from', task.from.time)
-    processor.tailOpLog().catch(err => {
+    processor.tailOpLog().catch((err) => {
       console.error('tailOpLog', err)
       process.exit(0)
     })

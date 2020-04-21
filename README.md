@@ -36,7 +36,7 @@ Task.onSaveCheckpoint((name, checkpoint) => {
 })
 
 // this will overwrite task.from in config file
-Task.onLoadCheckpoint(name => {
+Task.onLoadCheckpoint((name) => {
   return redis.get(`mongo-es:${name}`).then(JSON.parse)
 })
 

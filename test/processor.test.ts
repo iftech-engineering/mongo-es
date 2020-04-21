@@ -63,7 +63,7 @@ const esDoc: ESDoc = {
   field2: 2,
 }
 
-test('transformer create', t => {
+test('transformer create', (t) => {
   const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(processor.transformer('upsert', mongoDoc), <IR>{
     action: 'upsert',
@@ -77,7 +77,7 @@ test('transformer create', t => {
   })
 })
 
-test('transformer update', t => {
+test('transformer update', (t) => {
   const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(processor.transformer('upsert', mongoDoc), <IR>{
     action: 'upsert',
@@ -91,7 +91,7 @@ test('transformer update', t => {
   })
 })
 
-test('transformer delete', t => {
+test('transformer delete', (t) => {
   const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(processor.transformer('delete', mongoDoc), <IR>{
     action: 'delete',
@@ -101,7 +101,7 @@ test('transformer delete', t => {
   })
 })
 
-test('applyUpdateMongoDoc', t => {
+test('applyUpdateMongoDoc', (t) => {
   const transform = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(transform.applyUpdateMongoDoc(mongoDoc, oplog.o.$set, oplog.o.$unset), {
     _id: new ObjectID('aaaaaaaaaaaaaaaaaaaaaaaa'),
@@ -111,7 +111,7 @@ test('applyUpdateMongoDoc', t => {
   })
 })
 
-test('applyUpdateESDoc', t => {
+test('applyUpdateESDoc', (t) => {
   const transform = new Processor(task, new Controls({}), null as any, null as any)
   t.deepEqual(transform.applyUpdateESDoc(esDoc, oplog.o.$set, oplog.o.$unset), {
     _id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
@@ -119,17 +119,17 @@ test('applyUpdateESDoc', t => {
   })
 })
 
-test('ignoreUpdate true', t => {
+test('ignoreUpdate true', (t) => {
   const processor = new Processor(task2, new Controls({}), null as any, null as any)
   t.is(processor.ignoreUpdate(oplog), true)
 })
 
-test('ignoreUpdate false', t => {
+test('ignoreUpdate false', (t) => {
   const processor = new Processor(task, new Controls({}), null as any, null as any)
   t.is(processor.ignoreUpdate(oplog), false)
 })
 
-test('mergeOplogs insert then update', t => {
+test('mergeOplogs insert then update', (t) => {
   const processor = new Processor(
     {
       transform: {
@@ -183,7 +183,7 @@ test('mergeOplogs insert then update', t => {
   ])
 })
 
-test('mergeOplogs update then update', t => {
+test('mergeOplogs update then update', (t) => {
   const processor = new Processor(
     {
       transform: {
@@ -246,7 +246,7 @@ test('mergeOplogs update then update', t => {
   ])
 })
 
-test('mergeOplogs update then delete', t => {
+test('mergeOplogs update then delete', (t) => {
   const processor = new Processor(
     {
       transform: {
@@ -296,7 +296,7 @@ test('mergeOplogs update then delete', t => {
   ])
 })
 
-test('mergeOplogs insert then delete', t => {
+test('mergeOplogs insert then delete', (t) => {
   const processor = new Processor(
     {
       transform: {
@@ -332,7 +332,7 @@ test('mergeOplogs insert then delete', t => {
   t.deepEqual(oplogs, [])
 })
 
-test('mergeOplogs insert then update then update', t => {
+test('mergeOplogs insert then update then update', (t) => {
   const processor = new Processor(
     {
       transform: {

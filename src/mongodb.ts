@@ -59,7 +59,7 @@ export default class MongoDB {
   }
 
   async retrieve(id: ObjectID): Promise<MongoDoc | null> {
-    return new Promise<MongoDoc | null>(resolve => {
+    return new Promise<MongoDoc | null>((resolve) => {
       this.retrieveBuffer[id.toHexString()] = this.retrieveBuffer[id.toHexString()] || []
       this.retrieveBuffer[id.toHexString()].push(resolve)
       if (!this.retrieveRunning) {
@@ -76,10 +76,10 @@ export default class MongoDB {
       return
     }
     const docs = await this._retrieveBatchSafe(ids)
-    ids.forEach(id => {
+    ids.forEach((id) => {
       const cbs = this.retrieveBuffer[id]
       delete this.retrieveBuffer[id]
-      cbs.forEach(cb => {
+      cbs.forEach((cb) => {
         cb(docs[id] || null)
       })
     })
@@ -96,7 +96,7 @@ export default class MongoDB {
         })
         .toArray()
       console.debug('retrieve from mongodb', docs)
-      return _.keyBy(docs, doc => doc._id.toHexString())
+      return _.keyBy(docs, (doc) => doc._id.toHexString())
     } catch (err) {
       console.warn('retrieve from mongodb', this.task.name(), ids, err)
       return {}
