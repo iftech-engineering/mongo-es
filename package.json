@@ -37,7 +37,7 @@
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
     "elasticsearch": "16.7.1",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "mongodb": "3.5.6",
     "rx": "4.1.0"
   },
