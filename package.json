@@ -1,6 +1,6 @@
 {
   "name": "mongo-es",
-  "version": "3.4.3",
+  "version": "3.4.4",
   "description": "A MongoDB to Elasticsearch connector",
   "keywords": [
     "mongodb",
@@ -37,22 +37,22 @@
   "homepage": "https://github.com/jike-engineering/mongo-es#readme",
   "dependencies": {
     "elasticsearch": "16.7.1",
-    "lodash": "4.17.19",
-    "mongodb": "3.5.6",
+    "lodash": "4.17.20",
+    "mongodb": "3.6.0",
     "rx": "4.1.0"
   },
   "devDependencies": {
     "@types/elasticsearch": "5.0.36",
-    "@types/lodash": "4.14.150",
-    "@types/mongodb": "3.5.8",
-    "@types/rx": "4.1.1",
-    "ava": "3.7.1",
+    "@types/lodash": "4.14.159",
+    "@types/mongodb": "3.5.26",
+    "@types/rx": "4.1.2",
+    "ava": "3.11.1",
     "husky": "4.2.5",
-    "nodemon": "2.0.3",
-    "prettier": "2.0.4",
+    "nodemon": "2.0.4",
+    "prettier": "2.0.5",
     "pretty-quick": "2.0.1",
-    "source-map-support": "0.5.17",
-    "typescript": "3.8.3"
+    "source-map-support": "0.5.19",
+    "typescript": "3.9.7"
   },
   "husky": {
     "hooks": {
